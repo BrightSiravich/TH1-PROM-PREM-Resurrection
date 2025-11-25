@@ -224,3 +224,333 @@ ODI_EN = [
         ]
     }
 ]
+NDI_THAI = [
+    {
+        "question": "1. ความเจ็บปวด",
+        "options": [
+            "0 - ยังไม่มีความเจ็บปวดในขณะนี้",
+            "1 - ปวดน้อยมากในขณะนี้",
+            "2 - ปวดปานกลางในขณะนี้",
+            "3 - ปวดค่อนข้างรุนแรงในขณะนี้",
+            "4 - ปวดรุนแรงมากในขณะนี้",
+            "5 - ปวดร้ายแรงที่สุดเท่าที่จะจินตนาการได้ในขณะนี้"
+        ]
+    },
+    {
+        "question": "2. การดูแลตนเอง",
+        "options": [
+            "0 - ฉันสามารถดูแลตนเองได้ตามปกติโดยไม่มีความเจ็บปวดเพิ่มขึ้น",
+            "1 - ฉันสามารถดูแลตนเองได้ตามปกติแต่อาจมีความเจ็บปวดเพิ่มขึ้น",
+            "2 - ขณะดูแลตนเองจะมีอาการเจ็บปวดทำให้ต้องทำช้า ๆ และระมัดระวัง",
+            "3 - ฉันต้องการความช่วยเหลือบ้างแต่ยังสามารถดูแลตนเองได้เป็นส่วนใหญ่",
+            "4 - ฉันต้องการความช่วยเหลือทุกวันในการดูแลตนเองเกือบทุกด้าน",
+            "5 - ฉันไม่สามารถแต่งตัวเองได้,ฉันอาบน้ำตนเองด้วยความยากลำบากและต้องอยู่บนเตียง"
+        ]
+    },
+    {
+        "question": "3. การยกของ",
+        "options": [
+            "0 - ฉันสามารถยกของหนักได้โดยไม่มีการเจ็บปวดเพิ่มเติม",
+            "1 - ฉันสามารถยกของหนักได้แต่มีการเจ็บปวดเพิ่มเติม",
+            "2 - อาการปวดทำให้ฉันไม่สามารถยกของหนักสูงขึ้นจากพื้น แต่ฉันสามารถยกได้ถ้าของอยู่ในตำแหน่งที่สามารถทำให้ยกได้ง่ายมากขึ้น เช่น วางอยู่บนโต๊ะ",
+            "3 - อาการปวดทำให้ฉันไม่สามารถยกของน้ำหนักเบาถึงปานกลางสูงขึ้นจากพื้น แต่ฉันสามารถยกได้ถ้าของอยู่ในตำแหน่งที่ง่ายขึ้น เช่น ถ้าของอยู่บนโต๊ะ",
+            "4 - ฉันสามารถยกของที่เบามาก ๆ ได้",
+            "5 - ฉันไม่สามารถยกหรือถืออะไรได้เลย"
+        ]
+    },
+    {
+        "question": "4. การอ่านหนังสือ",
+        "options": [
+            "0 - ฉันสามารถอ่านหนังสือได้เท่าที่ต้องการโดยไม่มีอาการปวดคอ",
+            "1 - ฉันสามารถอ่านหนังสือได้เท่าที่ต้องการโดยมีอาการปวดคอเล็กน้อย",
+            "2 - ฉันสามารถอ่านหนังสือได้เท่าที่ต้องการโดยมีอาการปวดคอปานกลาง",
+            "3 - ฉันไม่สามารถอ่านหนังสือได้เท่าที่ต้องการเพราะปวดต้นคอปานกลาง",
+            "4 - ฉันอ่านหนังสือได้อย่างยากลำบากเพราะอาการปวดคอรุนแรง",
+            "5 - ฉันไม่สามารถอ่านหนังสือได้เลย"
+        ]
+    },
+    {
+        "question": "5. อาการปวดศีรษะ",
+        "options": [
+            "0 - ฉันไม่มีอาการปวดศีรษะเลย",
+            "1 - ฉันมีอาการปวดศีรษะเล็กน้อยไม่บ่อย",
+            "2 - ฉันมีอาการปวดศีรษะปานกลางไม่บ่อย",
+            "3 - ฉันมีอาการปวดศีรษะปานกลางบ่อย ๆ",
+            "4 - ฉันมีอาการปวดศีรษะรุนแรงบ่อย ๆ",
+            "5 - ฉันมีอาการปวดศีรษะเกือบตลอดเวลา"
+        ]
+    },
+    {
+        "question": "6. การมีสมาธิ",
+        "options": [
+            "0 - ฉันสามารถมีสมาธิเต็มที่เมื่อฉันต้องการโดยไม่ได้ยากลำบากนัก",
+            "1 - ฉันสามารถมีสมาธิเต็มที่เมื่อฉันต้องการโดยยากลำบากเล็กน้อย",
+            "2 - ฉันมีความยากลำบากกลาง ๆ ที่จะมีสมาธิเมื่อฉันต้องการ",
+            "3 - ฉันมีความยากลำบากมากที่จะมีสมาธิเมื่อฉันต้องการ",
+            "4 - ฉันมีความยากลำบากมาก ๆ ที่จะมีสมาธิเมื่อฉันต้องการ",
+            "5 - ฉันไม่สามารถมีสมาธิได้เลย"
+        ]
+    },
+    {
+        "question": "7. การทำงาน",
+        "options": [
+            "0 - ฉันสามารถทำงานได้มากเท่าที่ต้องการ",
+            "1 - ฉันสามารถทำงานปกติทั่วไปได้แต่ไม่มากกว่านี้",
+            "2 - ฉันทำงานปกติทั่วไปส่วนใหญ่ได้แต่ไม่มากกว่านี้",
+            "3 - ฉันไม่สามารถทำงานปกติทั่วไปได้",
+            "4 - ฉันทำงานได้ด้วยความยากลำบาก",
+            "5 - ฉันไม่สามารถทำงานได้เลย"
+        ]
+    },
+    {
+        "question": "8. การขับรถ",
+        "options": [
+            "0 - ฉันขับรถได้โดยไม่มีอาการปวดคอ",
+            "1 - ฉันขับรถได้ไกลเท่าที่ฉันต้องการโดยมีอาการปวดต้นคอเล็กน้อย",
+            "2 - ฉันขับรถได้ไกลเท่าที่ต้องการโดยมีอาการปวดต้นคอปานกลาง",
+            "3 - ฉันไม่สามารถขับรถได้ไกลเท่าที่ต้องการเพราะอาการปวดคอปานกลาง",
+            "4 - ฉันขับรถได้ด้วยความยากลำบากเนื่องจากปวดต้นคออย่างรุนแรง",
+            "5 - ฉันไม่สามารถขับรถได้เลย"
+        ]
+    },
+    {
+        "question": "9. การนอนหลับ",
+        "options": [
+            "0 - ฉันไม่มีปัญหาเรื่องการนอนหลับเลย",
+            "1 - การนอนหลับของฉันถูกรบกวนน้อยมาก (นอนไม่หลับน้อยกว่า 1 ชั่วโมง)",
+            "2 - การนอนหลับของฉันถูกรบกวนเล็กน้อย (นอนไม่หลับ 1-2 ชั่วโมง)",
+            "3 - การนอนหลับของฉันถูกรบกวนปานกลาง (นอนไม่หลับ 2-3 ชั่วโมง)",
+            "4 - การนอนหลับของฉันถูกรบกวนรุนแรง (นอนไม่หลับ 3-5 ชั่วโมง)",
+            "5 - การนอนหลับของฉันถูกรบกวนอย่างสมบูรณ์แบบ (นอนไม่หลับ 5-7 ชั่วโมง)"
+        ]
+    },
+    {
+        "question": "10. กิจกรรมนันทนาการ",
+        "options": [
+            "0 - ฉันสามารถเข้าร่วมกิจกรรมนันทนาการของฉันได้ทุกอย่างโดยไม่มีอาการปวดคอ",
+            "1 - ฉันสามารถเข้าร่วมกิจกรรมนันทนาการของฉันได้ทุกอย่างโดยมีปวดคอบ้าง",
+            "2 - ฉันสามารถเข้าร่วมกิจกรรมนันทนาการได้เป็นส่วนใหญ่แต่ไม่ทั้งหมดเนื่องจากอาการปวดคอ",
+            "3 - ฉันสามารถเข้าร่วมกิจกรรมนันทนาการของฉันได้บ้างเพราะปวดคอ",
+            "4 - ฉันเข้าร่วมกิจกรรมนันทนาการได้อย่างยากลำบากเพราะปวดคอ",
+            "5 - ฉันไม่สามารถเข้าร่วมกิจกรรมนันทนาการได้เลย"
+        ]
+    }
+]
+
+NDI_EN = [
+    {
+        "question": "Section 1 – Pain intensity",
+        "options": [
+            "0 - I have no pain at the moment.",
+            "1 - The pain is very mild at the moment.",
+            "2 - The pain is moderate at the moment.",
+            "3 - The pain is fairly severe at the moment.",
+            "4 - The pain is very severe at the moment.",
+            "5 - The pain is the worst imaginable at the moment."
+        ]
+    },
+    {
+        "question": "Section 2 – Personal care (washing, dressing)",
+        "options": [
+            "0 - I can look after myself normally without causing extra pain.",
+            "1 - I can look after myself normally but it causes extra pain.",
+            "2 - It is painful to look after myself and I am slow and careful.",
+            "3 - I need some help but manage most of my personal care.",
+            "4 - I need help every day in most aspects of self-care.",
+            "5 - I do not get dressed, I wash with difficulty and stay in bed."
+        ]
+    },
+    {
+        "question": "Section 3 – Lifting",
+        "options": [
+            "0 - I can lift heavy weights without extra pain.",
+            "1 - I can lift heavy weights but it gives extra pain.",
+            "2 - Pain prevents me from lifting heavy weights off the floor, but I can manage if they are conveniently placed, for example on a table.",
+            "3 - Pain prevents me from lifting heavy weights, but I can manage light to medium weights if they are conveniently positioned.",
+            "4 - I can lift very light weights.",
+            "5 - I cannot lift or carry anything at all."
+        ]
+    },
+    {
+        "question": "Section 4 – Reading",
+        "options": [
+            "0 - I can read as much as I want to with no pain in my neck.",
+            "1 - I can read as much as I want to with slight pain in my neck.",
+            "2 - I can read as much as I want with moderate pain in my neck.",
+            "3 - I can’t read as much as I want because of moderate pain in my neck.",
+            "4 - I can hardly read at all because of severe pain in my neck.",
+            "5 - I cannot read at all."
+        ]
+    },
+    {
+        "question": "Section 5 – Headaches",
+        "options": [
+            "0 - I have no headaches at all.",
+            "1 - I have slight headaches which come infrequently.",
+            "2 - I have moderate headaches which come infrequently.",
+            "3 - I have moderate headaches which come frequently.",
+            "4 - I have severe headaches which come frequently.",
+            "5 - I have headaches almost all the time."
+        ]
+    },
+    {
+        "question": "Section 6 – Concentration",
+        "options": [
+            "0 - I can concentrate fully when I want to with no difficulty.",
+            "1 - I can concentrate fully when I want to with slight difficulty.",
+            "2 - I have a fair degree of difficulty in concentrating when I want to.",
+            "3 - I have a lot of difficulty in concentrating when I want to.",
+            "4 - I have a great deal of difficulty in concentrating when I want to.",
+            "5 - I cannot concentrate at all."
+        ]
+    },
+    {
+        "question": "Section 7 – Work",
+        "options": [
+            "0 - I can do as much work as I want to.",
+            "1 - I can only do my usual work, but no more.",
+            "2 - I can do most of my usual work, but no more.",
+            "3 - I cannot do my usual work.",
+            "4 - I can hardly do any work at all.",
+            "5 - I cannot do any work at all."
+        ]
+    },
+    {
+        "question": "Section 8 – Driving",
+        "options": [
+            "0 - I can drive my car without any neck pain.",
+            "1 - I can drive my car as long as I want with slight pain in my neck.",
+            "2 - I can drive my car as long as I want with moderate pain in my neck.",
+            "3 - I cannot drive my car as long as I want because of moderate pain in my neck.",
+            "4 - I can hardly drive at all because of severe pain in my neck.",
+            "5 - I cannot drive my car at all."
+        ]
+    },
+    {
+        "question": "Section 9 – Sleeping",
+        "options": [
+            "0 - I have no trouble sleeping.",
+            "1 - My sleep is slightly disturbed (less than 1 hr sleepless).",
+            "2 - My sleep is mildly disturbed (1-2 hrs sleepless).",
+            "3 - My sleep is moderately disturbed (2-3 hrs sleepless).",
+            "4 - My sleep is greatly disturbed (3-5 hrs sleepless).",
+            "5 - My sleep is completely disturbed (5-7 hrs sleepless)."
+        ]
+    },
+    {
+        "question": "Section 10 – Recreation",
+        "options": [
+            "0 - I am able to engage in all my recreation activities with no neck pain at all.",
+            "1 - I am able to engage in all my recreation activities, with some pain in my neck.",
+            "2 - I am able to engage in most, but not all of my usual recreation activities because of pain in my neck.",
+            "3 - I am able to engage in a few of my usual recreation activities because of pain in my neck.",
+            "4 - I can hardly do any recreation activities because of pain in my neck.",
+            "5 - I cannot do any recreation activities at all."
+        ]
+    }
+]
+EQ5D_THAI = [
+    {
+        "question": "การเคลื่อนไหว (Mobility)",
+        "options": [
+            "1 - ข้าพเจ้าไม่มีปัญหาในการเดิน",
+            "2 - ข้าพเจ้ามีปัญหาในการเดินเล็กน้อย",
+            "3 - ข้าพเจ้ามีปัญหาในการเดินปานกลาง",
+            "4 - ข้าพเจ้ามีปัญหาในการเดินอย่างมาก",
+            "5 - ข้าพเจ้าเดินไม่ได้"
+        ]
+    },
+    {
+        "question": "การดูแลตนเอง (Self-Care)",
+        "options": [
+            "1 - ข้าพเจ้าไม่มีปัญหาในการอาบน้ำ หรือใส่เสื้อผ้าด้วยตนเอง",
+            "2 - ข้าพเจ้ามีปัญหาในการอาบน้ำ หรือใส่เสื้อผ้าด้วยตนเองเล็กน้อย",
+            "3 - ข้าพเจ้ามีปัญหาในการอาบน้ำ หรือใส่เสื้อผ้าด้วยตนเองปานกลาง",
+            "4 - ข้าพเจ้ามีปัญหาในการอาบน้ำ หรือใส่เสื้อผ้าด้วยตนเองอย่างมาก",
+            "5 - ข้าพเจ้าอาบน้ำ หรือใส่เสื้อผ้าด้วยตนเองไม่ได้"
+        ]
+    },
+    {
+        "question": "กิจกรรมที่ทำเป็นประจำ (Usual Activities) เช่น ทำงาน, เรียนหนังสือ, ทำงานบ้าน, กิจกรรมครอบครัว หรือกิจกรรมยามว่าง",
+        "options": [
+            "1 - ข้าพเจ้าไม่มีปัญหาในการทำกิจกรรมที่ทำเป็นประจำ",
+            "2 - ข้าพเจ้ามีปัญหาในการทำกิจกรรมที่ทำเป็นประจำเล็กน้อย",
+            "3 - ข้าพเจ้ามีปัญหาในการทำกิจกรรมที่ทำเป็นประจำปานกลาง",
+            "4 - ข้าพเจ้ามีปัญหาในการทำกิจกรรมที่ทำเป็นประจำอย่างมาก",
+            "5 - ข้าพเจ้าทำกิจกรรมที่ทำเป็นประจำไม่ได้"
+        ]
+    },
+    {
+        "question": "อาการเจ็บปวด / อาการไม่สบายตัว (Pain / Discomfort)",
+        "options": [
+            "1 - ข้าพเจ้าไม่มีอาการเจ็บปวดหรืออาการไม่สบายตัว",
+            "2 - ข้าพเจ้ามีอาการเจ็บปวดหรืออาการไม่สบายตัวเล็กน้อย",
+            "3 - ข้าพเจ้ามีอาการเจ็บปวดหรืออาการไม่สบายตัวปานกลาง",
+            "4 - ข้าพเจ้ามีอาการเจ็บปวดหรืออาการไม่สบายตัวอย่างมาก",
+            "5 - ข้าพเจ้ามีอาการเจ็บปวดหรืออาการไม่สบายตัวอย่างมากที่สุด"
+        ]
+    },
+    {
+        "question": "ความวิตกกังวล / ความซึมเศร้า (Anxiety / Depression)",
+        "options": [
+            "1 - ข้าพเจ้าไม่รู้สึกวิตกกังวลหรือซึมเศร้า",
+            "2 - ข้าพเจ้าสู้สึกวิตกกังวลหรือซึมเศร้าเล็กน้อย",
+            "3 - ข้าพเจ้าสู้สึกวิตกกังวลหรือซึมเศร้าปานกลาง",
+            "4 - ข้าพเจ้าสู้สึกวิตกกังวลหรือซึมเศร้าอย่างมาก",
+            "5 - ข้าพเจ้าสู้สึกวิตกกังวลหรือซึมเศร้าอย่างมากที่สุด"
+        ]
+    }
+]
+
+EQ5D_EN = [
+    {
+        "question": "MOBILITY",
+        "options": [
+            "1 - I have no problems in walking about",
+            "2 - I have slight problems in walking about",
+            "3 - I have moderate problems in walking about",
+            "4 - I have severe problems in walking about",
+            "5 - I am unable to walk about"
+        ]
+    },
+    {
+        "question": "SELF-CARE",
+        "options": [
+            "1 - I have no problems washing or dressing myself",
+            "2 - I have slight problems washing or dressing myself",
+            "3 - I have moderate problems washing or dressing myself",
+            "4 - I have severe problems washing or dressing myself",
+            "5 - I am unable to wash or dress myself"
+        ]
+    },
+    {
+        "question": "USUAL ACTIVITIES (e.g. work, study, housework, family or leisure activities)",
+        "options": [
+            "1 - I have no problems doing my usual activities",
+            "2 - I have slight problems doing my usual activities",
+            "3 - I have moderate problems doing my usual activities",
+            "4 - I have severe problems doing my usual activities",
+            "5 - I am unable to do my usual activities"
+        ]
+    },
+    {
+        "question": "PAIN / DISCOMFORT",
+        "options": [
+            "1 - I have no pain or discomfort",
+            "2 - I have slight pain or discomfort",
+            "3 - I have moderate pain or discomfort",
+            "4 - I have severe pain or discomfort",
+            "5 - I have extreme pain or discomfort"
+        ]
+    },
+    {
+        "question": "ANXIETY / DEPRESSION",
+        "options": [
+            "1 - I am not anxious or depressed",
+            "2 - I am slightly anxious or depressed",
+            "3 - I am moderately anxious or depressed",
+            "4 - I am severely anxious or depressed",
+            "5 - I am extremely anxious or depressed"
+        ]
+    }
+]

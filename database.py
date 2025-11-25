@@ -16,7 +16,7 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             hn TEXT,
             visit_date TEXT,
-            visit_time TEXT,
+            -- visit_time TEXT, -- Removed
             gender TEXT,
             age INTEGER,
             operation_date TEXT,

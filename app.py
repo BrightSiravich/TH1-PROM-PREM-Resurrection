@@ -46,7 +46,16 @@ def calculate_eq5d_index(dims):
     """
     # TODO: REPLACE THIS WITH OFFICIAL THAI VALUE SET CALCULATION
     # Example structure: 1 - (constant + coef_mobility + coef_selfcare + ...)
+    # Example structure: 1 - (constant + coef_mobility + coef_selfcare + ...)
     return 0.0 
+
+@st.cache_data
+def convert_df(df):
+    """
+    Converts a DataFrame to CSV with utf-8-sig encoding.
+    Cached to prevent re-computation and ensure stable download object.
+    """
+    return df.to_csv(index=False).encode('utf-8-sig')
 
 # --- Main Application ---
 
@@ -127,6 +136,10 @@ with tab_patient:
             else:
                 df_display = df
                 
+            # Remove visit_time from display if it exists
+            if 'visit_time' in df_display.columns:
+                df_display = df_display.drop(columns=['visit_time'])
+                
             st.dataframe(df_display, use_container_width=True)
             
             # Actions (Export & Delete)
@@ -164,36 +177,15 @@ with tab_patient:
         with col_import:
             with st.expander("Import Data"):
                 # Template Download
-                template_data = {
-                    "hn": ["ExampleHN123"],
-                    "visit_date": [str(datetime.now().date())],
-                    "visit_time": ["09:00:00"],
-                    "gender": ["Male"],
-                    "age": [45],
-                    "operation_date": [str(datetime.now().date())],
-                    "surgeon": ["Dr. Siravich"],
-                    "assistant": ["Dr. Assistant"],
-                    "operation_type": ["TLIF"],
-                    "procedure_type": ["TL Spine Procedure"],
-                    "follow_up_period": ["Pre-op"],
-                    "pain_score": [5],
-                    "odi_q1": [0], "odi_q2": [0], "odi_q3": [0], "odi_q4": [0], "odi_q5": [0],
-                    "odi_q6": [0], "odi_q7": [0], "odi_q8": [0], "odi_q9": [0], "odi_q10": [0],
-                    "eq5d_1": [1], "eq5d_2": [1], "eq5d_3": [1], "eq5d_4": [1], "eq5d_5": [1],
-                    "health_status": [80],
-                    "satisfaction_score": [8],
-                    "note": ["Imported record"]
-                }
-                df_template = pd.DataFrame(template_data)
-                csv_template = df_template.to_csv(index=False).encode('utf-8')
-                
-                st.download_button(
-                    label="Download Template CSV",
-                    data=csv_template,
-                    file_name="patient_import_template.csv",
-                    mime="text/csv",
-                    help="Use this template to format your data for upload."
-                )
+                # Template Download
+                with open("patient_import_template.csv", "rb") as f:
+                    st.download_button(
+                        label="Download Template CSV",
+                        data=f,
+                        file_name="patient_import_template.csv",
+                        mime="text/csv",
+                        help="Use this template to format your data for upload."
+                    )
 
                 st.markdown("---")
 
@@ -202,7 +194,13 @@ with tab_patient:
                     if st.button("Process Import"):
                         try:
                             if uploaded_file.name.endswith('.csv'):
-                                df_import = pd.read_csv(uploaded_file)
+                                try:
+                                    # Try UTF-8 first
+                                    df_import = pd.read_csv(uploaded_file, encoding='utf-8')
+                                except UnicodeDecodeError:
+                                    # Fallback to Thai Windows encoding (cp874)
+                                    uploaded_file.seek(0)
+                                    df_import = pd.read_csv(uploaded_file, encoding='cp874')
                             else:
                                 df_import = pd.read_excel(uploaded_file)
                             
@@ -243,118 +241,153 @@ with tab_patient:
         # Procedure Type Selector (Outside form to enable dynamic updates)
         st.markdown("#### Procedure Info")
         proc_type = st.radio("Procedure Type", ["TL Spine Procedure", "C Spine Procedure"], horizontal=True)
+        
+        # Language Switcher moved to specific sections
+
             
-        with st.form("visit_form"):
-            # 1. Patient Info
-            st.markdown("#### Patient Details")
+        # Form removed to allow dynamic updates
+        # 1. Patient Info
+        st.markdown("#### Patient Details")
+        col1, col2 = st.columns(2)
+        with col1:
             hn = st.text_input("HN (Hospital Number)")
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                gender = st.selectbox("Gender", ["Male", "Female"])
-                age = st.number_input("Age", min_value=0, max_value=120, step=1)
-            with col2:
-                visit_date = st.date_input("Visit Date", datetime.now())
-                visit_time = st.time_input("Visit Time", datetime.now())
+            gender = st.selectbox("Gender", ["Male", "Female"])
+        with col2:
+            visit_date = st.date_input("Visit Date", datetime.now())
+            age = st.number_input("Age", min_value=0, max_value=120, step=1)
 
-            # 2. Operation Info
-            st.markdown("#### Operation Info")
-            
-            col3, col4 = st.columns(2)
-            with col3:
-                op_date = st.date_input("Operation Date", datetime.now())
-                surgeon = st.text_input("Surgeon Name", value="Dr. Siravich")
-            with col4:
-                assistant = st.text_input("Assistant Name")
-                op_type = st.text_input("Operation Type")
-            
-            follow_up = st.selectbox("Follow-up Period", ["Pre-op", "2 week", "3 mo", "6 mo", "12 mo", "24 mo"])
+        # 2. Operation Info
+        st.markdown("#### Operation Info")
+        
+        col3, col4 = st.columns(2)
+        with col3:
+            op_date = st.date_input("Operation Date", datetime.now())
+            surgeon = st.text_input("Surgeon Name", value="Dr. Siravich")
+        with col4:
+            assistant = st.text_input("Assistant Name")
+            op_type = st.text_input("Operation Type")
+        
+        follow_up = st.selectbox("Follow-up Period", ["Pre-op", "2 week", "3 mo", "6 mo", "12 mo", "24 mo"])
 
-            # 3. Clinical Scores
-            st.markdown("#### Clinical Scores")
-            pain_score = st.slider("VAS Pain Score (0-10)", 0, 10, 5)
-            
-            # Dynamic Header and Questions based on Procedure Type
-            import odi_content as odi_content
-            odi_scores = []
+        # 3. Clinical Scores
+        st.markdown("#### Clinical Scores")
+        pain_score = st.slider("VAS Pain Score (0-10)", 0, 10, 5)
+        
+        # Dynamic Header and Questions based on Procedure Type
+        import odi_content as odi_content
+        odi_scores = []
 
-            if proc_type == "TL Spine Procedure":
+        if proc_type == "TL Spine Procedure":
+            st.markdown("---")
+            
+            # Header with Language Switcher
+            col_header, col_lang = st.columns([4, 1])
+            with col_header:
+                st.markdown("### ODI (Oswestry Disability Index)")
+            with col_lang:
+                odi_lang = st.radio("Language", ["TH", "EN"], horizontal=True, label_visibility="collapsed")
+            
+            
+            if odi_lang == "TH":
+                odi_data = odi_content.ODI_THAI
+            else:
+                odi_data = odi_content.ODI_EN
+            
+            # st.write(f"Debug: Lang={odi_lang}")
+            # st.write(f"Debug: Q1={odi_data[0]['question']}")
+
+            # Single Column Layout
+            for i, item in enumerate(odi_data):
+                st.markdown(f"**{item['question']}**")
+                # Create a unique key for each question's dropdown based on language
+                selected_option = st.selectbox(
+                    "Select option",
+                    item['options'],
+                    key=f"odi_q_{i+1}_{odi_lang}",
+                    label_visibility="collapsed"
+                )
+                # The score is the index of the selected option (0-5)
+                score = item['options'].index(selected_option)
+                odi_scores.append(score)
+                # Removed "Score: X" display
                 st.markdown("---")
-                
-                # Header with Language Switcher
-                col_header, col_lang = st.columns([4, 1])
-                with col_header:
-                    st.markdown("### ODI (Oswestry Disability Index)")
-                with col_lang:
-                    # Simplified Language Switcher
-                    odi_lang = st.radio("Language", ["TH", "EN"], horizontal=True, label_visibility="collapsed")
-                
-                
-                if odi_lang == "TH":
-                    odi_data = odi_content.ODI_THAI
-                else:
-                    odi_data = odi_content.ODI_EN
-                
-                # st.write(f"Debug: Lang={odi_lang}")
-                # st.write(f"Debug: Q1={odi_data[0]['question']}")
-
-                # Single Column Layout
-                for i, item in enumerate(odi_data):
-                    st.markdown(f"**{item['question']}**")
-                    # Create a unique key for each question's dropdown based on language
-                    selected_option = st.selectbox(
-                        "Select option",
-                        item['options'],
-                        key=f"odi_q_{i+1}_{odi_lang}",
-                        label_visibility="collapsed"
-                    )
-                    # The score is the index of the selected option (0-5)
-                    score = item['options'].index(selected_option)
-                    odi_scores.append(score)
-                    # Removed "Score: X" display
-                    st.markdown("---")
-                
-                # Unpack scores for DB saving
-                odi_q1, odi_q2, odi_q3, odi_q4, odi_q5, odi_q6, odi_q7, odi_q8, odi_q9, odi_q10 = odi_scores
-
-            else: # C Spine (NDI)
-                st.markdown("##### NDI (Neck Disability Index)")
-                st.caption("0=No pain, 5=Worst pain")
-                q_labels = [
-                    "Q1: Pain Intensity", "Q2: Personal Care", "Q3: Lifting", "Q4: Reading", "Q5: Headaches",
-                    "Q6: Concentration", "Q7: Work", "Q8: Driving", "Q9: Sleeping", "Q10: Recreation"
-                ]
-                
-                # Group NDI questions
-                ndi_cols = st.columns(2)
-                with ndi_cols[0]:
-                    odi_q1 = st.selectbox(q_labels[0], range(6), index=0)
-                    odi_q2 = st.selectbox(q_labels[1], range(6), index=0)
-                    odi_q3 = st.selectbox(q_labels[2], range(6), index=0)
-                    odi_q4 = st.selectbox(q_labels[3], range(6), index=0)
-                    odi_q5 = st.selectbox(q_labels[4], range(6), index=0)
-                with ndi_cols[1]:
-                    odi_q6 = st.selectbox(q_labels[5], range(6), index=0)
-                    odi_q7 = st.selectbox(q_labels[6], range(6), index=0)
-                    odi_q8 = st.selectbox(q_labels[7], range(6), index=0)
-                    odi_q9 = st.selectbox(q_labels[8], range(6), index=0)
-                    odi_q10 = st.selectbox(q_labels[9], range(6), index=0)
             
+            # Unpack scores for DB saving
+            odi_q1, odi_q2, odi_q3, odi_q4, odi_q5, odi_q6, odi_q7, odi_q8, odi_q9, odi_q10 = odi_scores
+
+        else: # C Spine (NDI)
+            st.markdown("---")
+            
+            # Header with Language Switcher
+            col_header, col_lang = st.columns([4, 1])
+            with col_header:
+                st.markdown("### NDI (Neck Disability Index)")
+            with col_lang:
+                ndi_lang = st.radio("Language", ["TH", "EN"], horizontal=True, label_visibility="collapsed", key="ndi_lang")
+            
+            if ndi_lang == "TH":
+                ndi_data = odi_content.NDI_THAI
+            else:
+                ndi_data = odi_content.NDI_EN
+
+            # Single Column Layout
+            for i, item in enumerate(ndi_data):
+                st.markdown(f"**{item['question']}**")
+                # Create a unique key for each question's dropdown based on language
+                selected_option = st.selectbox(
+                    "Select option",
+                    item['options'],
+                    key=f"ndi_q_{i+1}_{ndi_lang}",
+                    label_visibility="collapsed"
+                )
+                # The score is the index of the selected option (0-5)
+                score = item['options'].index(selected_option)
+                odi_scores.append(score)
+                st.markdown("---")
+            
+            # Unpack scores for DB saving (reusing ODI columns as requested)
+            odi_q1, odi_q2, odi_q3, odi_q4, odi_q5, odi_q6, odi_q7, odi_q8, odi_q9, odi_q10 = odi_scores
+        
+        st.markdown("---")
+        
+        # Header with Language Switcher
+        col_header_eq, col_lang_eq = st.columns([4, 1])
+        with col_header_eq:
             st.markdown("##### EQ-5D-5L")
-            eq_cols = st.columns(5)
-            with eq_cols[0]: eq1 = st.selectbox("Mobility", [1,2,3,4,5])
-            with eq_cols[1]: eq2 = st.selectbox("Self-care", [1,2,3,4,5])
-            with eq_cols[2]: eq3 = st.selectbox("Usual Activities", [1,2,3,4,5])
-            with eq_cols[3]: eq4 = st.selectbox("Pain/Discomfort", [1,2,3,4,5])
-            with eq_cols[4]: eq5 = st.selectbox("Anxiety/Depression", [1,2,3,4,5])
-            
-            health_status = st.slider("EQ-VAS Health Status (0-100)", 0, 100, 80)
-            satisfaction = st.slider("Satisfaction Score (PREM)", 0, 10, 8)
-            
-            note = st.text_area("Notes")
+        with col_lang_eq:
+            eq_lang = st.radio("Language", ["TH", "EN"], horizontal=True, label_visibility="collapsed", key="eq_lang")
 
-            # Form Actions
-            submitted = st.form_submit_button("Save Visit", use_container_width=True)
+        if eq_lang == "TH":
+            eq_data = odi_content.EQ5D_THAI
+        else:
+            eq_data = odi_content.EQ5D_EN
+            
+        eq_scores = []
+        
+        # Render Questions
+        for i, item in enumerate(eq_data):
+            st.markdown(f"**{item['question']}**")
+            selected_option = st.selectbox(
+                "Select option",
+                item['options'],
+                key=f"eq_q_{i+1}_{eq_lang}",
+                label_visibility="collapsed"
+            )
+            # Extract score from string "1 - Text" -> 1
+            score = int(selected_option.split(" - ")[0])
+            eq_scores.append(score)
+            st.markdown("---")
+            
+        # Unpack scores
+        eq1, eq2, eq3, eq4, eq5 = eq_scores
+        
+        health_status = st.slider("EQ-VAS Health Status (0-100)", 0, 100, 80)
+        satisfaction = st.slider("Satisfaction Score (PREM)", 0, 10, 8)
+        
+        note = st.text_area("Notes")
+
+        # Form Actions
+        submitted = st.button("Save Visit", use_container_width=True)
             
         if submitted:
             if not hn:
@@ -370,7 +403,7 @@ with tab_patient:
                 visit_data = {
                     "hn": hn,
                     "visit_date": str(visit_date),
-                    "visit_time": str(visit_time),
+                    # "visit_time": str(visit_time), # Removed
                     "gender": gender,
                     "age": age,
                     "operation_date": str(op_date),
