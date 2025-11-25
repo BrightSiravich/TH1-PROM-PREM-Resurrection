@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+.next/
+out/
+build/
+dist/
+
+# macOS System Files
+.DS_Store
+
+# Antigravity & AI Logs
+.antigravity/
+.artifacts/
+*.log
