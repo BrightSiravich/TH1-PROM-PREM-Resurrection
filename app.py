@@ -45,6 +45,149 @@ def convert_df(df):
     """
     return df.to_csv(index=False).encode('utf-8-sig')
 
+def render_analytics(df, title="Overall Analytics"):
+    """
+    Renders the analytics dashboard section given a dataframe.
+    """
+    # 1. Calculate Metrics
+    
+    # Filter for patients with Pre-op data
+    pre_op_df = df[df['follow_up_period'] == 'Pre-op'][['hn', 'pain_score', 'odi_score_percent', 'eq5d_score', 'health_status']]
+    
+    # Filter for patients with Follow-up data (excluding Pre-op)
+    follow_up_df = df[df['follow_up_period'] != 'Pre-op'][['hn', 'pain_score', 'odi_score_percent', 'eq5d_score', 'health_status', 'satisfaction_score']]
+    
+    patients_with_pre_op = pre_op_df['hn'].unique()
+    
+    # Initialize counters
+    pain_improved_count = 0
+    pain_total_eval = 0
+    odi_improved_count = 0
+    odi_total_eval = 0
+    eq5d_improved_count = 0
+    eq5d_total_eval = 0
+    vas_improved_count = 0
+    vas_total_eval = 0
+    
+    for hn in patients_with_pre_op:
+        patient_pre = pre_op_df[pre_op_df['hn'] == hn].iloc[0]
+        patient_post = follow_up_df[follow_up_df['hn'] == hn]
+        
+        if patient_post.empty:
+            continue
+            
+        # Pain Improvement (Decrease)
+        if pd.notna(patient_pre['pain_score']):
+            valid_post = patient_post['pain_score'].dropna()
+            if not valid_post.empty:
+                pain_total_eval += 1
+                if (valid_post < patient_pre['pain_score']).any():
+                    pain_improved_count += 1
+                    
+        # ODI Improvement (Decrease)
+        if pd.notna(patient_pre['odi_score_percent']):
+            valid_post = patient_post['odi_score_percent'].dropna()
+            if not valid_post.empty:
+                odi_total_eval += 1
+                if (valid_post < patient_pre['odi_score_percent']).any():
+                    odi_improved_count += 1
+
+        # EQ5D Improvement (Increase)
+        if pd.notna(patient_pre['eq5d_score']):
+            valid_post = patient_post['eq5d_score'].dropna()
+            if not valid_post.empty:
+                eq5d_total_eval += 1
+                if (valid_post > patient_pre['eq5d_score']).any():
+                    eq5d_improved_count += 1
+
+        # VAS Improvement (Increase)
+        if pd.notna(patient_pre['health_status']):
+            valid_post = patient_post['health_status'].dropna()
+            if not valid_post.empty:
+                vas_total_eval += 1
+                if (valid_post > patient_pre['health_status']).any():
+                    vas_improved_count += 1
+    
+    # Calculate Percentages
+    pct_pain = (pain_improved_count / pain_total_eval * 100) if pain_total_eval > 0 else 0.0
+    pct_odi = (odi_improved_count / odi_total_eval * 100) if odi_total_eval > 0 else 0.0
+    pct_eq5d = (eq5d_improved_count / eq5d_total_eval * 100) if eq5d_total_eval > 0 else 0.0
+    pct_vas = (vas_improved_count / vas_total_eval * 100) if vas_total_eval > 0 else 0.0
+    
+    # Avg Satisfaction (All follow-up visits)
+    avg_sat = follow_up_df['satisfaction_score'].mean()
+    if pd.isna(avg_sat): avg_sat = 0.0
+
+    # Display Metrics
+    # Row 1
+    m1, m2, m3 = st.columns(3)
+    m1.metric("Total Patients", df['hn'].nunique())
+    m2.metric("Total Visits", len(df))
+    m3.metric("Avg Satisfaction", f"{avg_sat:.1f}/10")
+    
+    # Row 2
+    m4, m5, m6, m7 = st.columns(4)
+    m4.metric("% Pain Improve", f"{pct_pain:.1f}%")
+    m5.metric("% ODI Improve", f"{pct_odi:.1f}%")
+    m6.metric("% EQ5D5L Improve", f"{pct_eq5d:.1f}%")
+    m7.metric("% EQVAS Improve", f"{pct_vas:.1f}%")
+    
+    # 2. Charts
+    st.markdown(f"### {title}")
+    
+    # Ensure categorical order for all charts
+    period_order = ["Pre-op", "2 week", "3 mo", "6 mo", "12 mo", "24 mo"]
+    df = df.copy() # Avoid SettingWithCopyWarning on the original df
+    df['follow_up_period'] = pd.Categorical(df['follow_up_period'], categories=period_order, ordered=True)
+
+    # Row 1: Pain & ODI
+    r1c1, r1c2 = st.columns(2)
+    
+    with r1c1:
+        # Pain Score Distribution (Box Plot)
+        fig_pain = px.box(df, x='follow_up_period', y='pain_score', 
+                          title="Pain Score Distribution by Follow-up",
+                          color='follow_up_period',
+                          category_orders={"follow_up_period": period_order})
+        st.plotly_chart(fig_pain, use_container_width=True)
+        
+    with r1c2:
+        # ODI Score Distribution
+        fig_odi = px.box(df, x='follow_up_period', y='odi_score_percent',
+                         title="ODI Score Distribution by Follow-up",
+                         color='follow_up_period',
+                         category_orders={"follow_up_period": period_order})
+        st.plotly_chart(fig_odi, use_container_width=True)
+
+    # Row 2: EQ-5D & Health VAS
+    r2c1, r2c2 = st.columns(2)
+    
+    with r2c1:
+        # EQ-5D-5L Distribution
+        fig_eq = px.box(df, x='follow_up_period', y='eq5d_score',
+                        title="EQ-5D-5L Score Distribution by Follow-up",
+                        color='follow_up_period',
+                        category_orders={"follow_up_period": period_order})
+        st.plotly_chart(fig_eq, use_container_width=True)
+        
+    with r2c2:
+        # EQ-VAS Health Status Distribution
+        fig_vas = px.box(df, x='follow_up_period', y='health_status',
+                         title="EQ-VAS Health Status Distribution by Follow-up",
+                         color='follow_up_period',
+                         category_orders={"follow_up_period": period_order})
+        st.plotly_chart(fig_vas, use_container_width=True)
+
+    # Row 3: Satisfaction
+    r3c1, r3c2 = st.columns(2)
+    with r3c1:
+        # Satisfaction Score Distribution
+        fig_sat = px.box(df, x='follow_up_period', y='satisfaction_score',
+                         title="Satisfaction Score Distribution by Follow-up",
+                         color='follow_up_period',
+                         category_orders={"follow_up_period": period_order})
+        st.plotly_chart(fig_sat, use_container_width=True)
+
 # --- Main Application ---
 
 st.title("BJC ESS Registry Dashboard")
@@ -64,66 +207,7 @@ with tab_dashboard:
     if df.empty:
         st.info("No data found. Please add a patient visit in the Patient tab.")
     else:
-        # 1. Metrics Row
-        m1, m2, m3, m4 = st.columns(4)
-        m1.metric("Total Patients", df['hn'].nunique())
-        m2.metric("Total Visits", len(df))
-        
-        # Calculate Avg Pain Improvement (Pre-op vs Last Follow-up)
-        # This is a simplified metric for the dashboard card
-        pre_op_pain = df[df['follow_up_period'] == 'Pre-op']['pain_score'].mean()
-        if pd.isna(pre_op_pain): pre_op_pain = 0
-        m3.metric("Avg Pre-op Pain", f"{pre_op_pain:.1f}")
-        
-        # 2. Charts
-        st.markdown("### Analytics")
-        
-        # Ensure categorical order for all charts
-        period_order = ["Pre-op", "2 week", "3 mo", "6 mo", "12 mo", "24 mo"]
-        df['follow_up_period'] = pd.Categorical(df['follow_up_period'], categories=period_order, ordered=True)
-
-        # Row 1: Pain & ODI
-        r1c1, r1c2 = st.columns(2)
-        
-        with r1c1:
-            # Pain Score Distribution (Box Plot)
-            fig_pain = px.box(df, x='follow_up_period', y='pain_score', 
-                              title="Pain Score Distribution by Follow-up",
-                              color='follow_up_period')
-            st.plotly_chart(fig_pain, use_container_width=True)
-            
-        with r1c2:
-            # ODI Score Distribution
-            fig_odi = px.box(df, x='follow_up_period', y='odi_score_percent',
-                             title="ODI Score Distribution by Follow-up",
-                             color='follow_up_period')
-            st.plotly_chart(fig_odi, use_container_width=True)
-
-        # Row 2: EQ-5D & Health VAS
-        r2c1, r2c2 = st.columns(2)
-        
-        with r2c1:
-            # EQ-5D-5L Distribution
-            fig_eq = px.box(df, x='follow_up_period', y='eq5d_score',
-                            title="EQ-5D-5L Score Distribution by Follow-up",
-                            color='follow_up_period')
-            st.plotly_chart(fig_eq, use_container_width=True)
-            
-        with r2c2:
-            # EQ-VAS Health Status Distribution
-            fig_vas = px.box(df, x='follow_up_period', y='health_status',
-                             title="EQ-VAS Health Status Distribution by Follow-up",
-                             color='follow_up_period')
-            st.plotly_chart(fig_vas, use_container_width=True)
-
-        # Row 3: Satisfaction
-        r3c1, r3c2 = st.columns(2)
-        with r3c1:
-            # Satisfaction Score Distribution
-            fig_sat = px.box(df, x='follow_up_period', y='satisfaction_score',
-                             title="Satisfaction Score Distribution by Follow-up",
-                             color='follow_up_period')
-            st.plotly_chart(fig_sat, use_container_width=True)
+        render_analytics(df, "Overall Analytics")
 
 # --- TAB 2: PATIENT ---
 with tab_patient:
@@ -542,6 +626,12 @@ with tab_patient:
                 st.session_state.patient_view = 'list'
                 st.rerun()
         
+        # Initialize search state
+        if 'search_results' not in st.session_state:
+            st.session_state.search_results = None
+        if 'search_performed' not in st.session_state:
+            st.session_state.search_performed = False
+        
         # Search Form
         with st.form("search_form"):
             st.markdown("#### Search Criteria")
@@ -595,62 +685,78 @@ with tab_patient:
             submitted_search = st.form_submit_button("Submit Search", type="primary")
 
         if submitted_search:
-            df = db.get_all_visits()
+            st.session_state.show_custom_analytics = False
+            df_search = db.get_all_visits()
             
-            if df.empty:
+            if df_search.empty:
                 st.warning("No data to search.")
+                st.session_state.search_performed = False
+                st.session_state.search_results = None
             else:
                 # Apply Filters
                 # Apply Filters
                 if s_hn:
                     # Ensure HN is string and strip whitespace for comparison
-                    df = df[df['hn'].astype(str).str.contains(s_hn.strip(), case=False, na=False)]
+                    df_search = df_search[df_search['hn'].astype(str).str.contains(s_hn.strip(), case=False, na=False)]
                 if s_gender:
-                    df = df[df['gender'].isin(s_gender)]
+                    df_search = df_search[df_search['gender'].isin(s_gender)]
                 
                 if s_age_min > 0 or s_age_max < 120:
-                    df = df[(df['age'] >= s_age_min) & (df['age'] <= s_age_max)]
+                    df_search = df_search[(df_search['age'] >= s_age_min) & (df_search['age'] <= s_age_max)]
                 
                 if s_follow_up:
-                    df = df[df['follow_up_period'].isin(s_follow_up)]
+                    df_search = df_search[df_search['follow_up_period'].isin(s_follow_up)]
                 
                 # Date Filters
                 if s_visit_date_start:
-                    df = df[pd.to_datetime(df['visit_date'], errors='coerce').dt.date >= s_visit_date_start]
+                    df_search = df_search[pd.to_datetime(df_search['visit_date'], errors='coerce').dt.date >= s_visit_date_start]
                 if s_visit_date_end:
-                    df = df[pd.to_datetime(df['visit_date'], errors='coerce').dt.date <= s_visit_date_end]
+                    df_search = df_search[pd.to_datetime(df_search['visit_date'], errors='coerce').dt.date <= s_visit_date_end]
                     
                 if s_op_date_start:
-                    df = df[pd.to_datetime(df['operation_date'], errors='coerce').dt.date >= s_op_date_start]
+                    df_search = df_search[pd.to_datetime(df_search['operation_date'], errors='coerce').dt.date >= s_op_date_start]
                 if s_op_date_end:
-                    df = df[pd.to_datetime(df['operation_date'], errors='coerce').dt.date <= s_op_date_end]
+                    df_search = df_search[pd.to_datetime(df_search['operation_date'], errors='coerce').dt.date <= s_op_date_end]
 
                 if s_surgeon:
-                    df = df[df['surgeon'].str.contains(s_surgeon, case=False, na=False)]
+                    df_search = df_search[df_search['surgeon'].str.contains(s_surgeon, case=False, na=False)]
                 if s_assistant:
-                    df = df[df['assistant'].str.contains(s_assistant, case=False, na=False)]
+                    df_search = df_search[df_search['assistant'].str.contains(s_assistant, case=False, na=False)]
                 if s_op_type:
-                    df = df[df['operation_type'].str.contains(s_op_type, case=False, na=False)]
+                    df_search = df_search[df_search['operation_type'].str.contains(s_op_type, case=False, na=False)]
 
                 if s_pain_min > 0 or s_pain_max < 10:
-                    df = df[(df['pain_score'] >= s_pain_min) & (df['pain_score'] <= s_pain_max)]
+                    df_search = df_search[(df_search['pain_score'] >= s_pain_min) & (df_search['pain_score'] <= s_pain_max)]
                 
                 if s_odi_min > 0.0 or s_odi_max < 100.0:
-                    df = df[(df['odi_score_percent'] >= s_odi_min) & (df['odi_score_percent'] <= s_odi_max)]
+                    df_search = df_search[(df_search['odi_score_percent'] >= s_odi_min) & (df_search['odi_score_percent'] <= s_odi_max)]
                 
                 # EQ5D Score
                 # Only filter if user changed defaults (-1.0 to 1.0)
                 if s_eq_score_min > -1.0 or s_eq_score_max < 1.0:
-                     df = df[(df['eq5d_score'].fillna(-99) >= s_eq_score_min) & (df['eq5d_score'].fillna(99) <= s_eq_score_max)]
+                     df_search = df_search[(df_search['eq5d_score'].fillna(-99) >= s_eq_score_min) & (df_search['eq5d_score'].fillna(99) <= s_eq_score_max)]
                 
                 if s_health_min > 0 or s_health_max < 100:
-                    df = df[(df['health_status'] >= s_health_min) & (df['health_status'] <= s_health_max)]
+                    df_search = df_search[(df_search['health_status'] >= s_health_min) & (df_search['health_status'] <= s_health_max)]
                 
                 # Satisfaction (Handle None for Pre-op)
                 # Only filter if range is restricted
                 if s_sat_min > 0 or s_sat_max < 10:
-                    df = df[df['satisfaction_score'].notna()]
-                    df = df[(df['satisfaction_score'] >= s_sat_min) & (df['satisfaction_score'] <= s_sat_max)]
+                    df_search = df_search[df_search['satisfaction_score'].notna()]
+                    df_search = df_search[(df_search['satisfaction_score'] >= s_sat_min) & (df_search['satisfaction_score'] <= s_sat_max)]
                 
-                st.markdown(f"### Results: {len(df)} records found")
-                st.dataframe(df, use_container_width=True)
+                st.session_state.search_results = df_search
+                st.session_state.search_performed = True
+
+        # Display Results from Session State
+        if st.session_state.get('search_performed', False) and st.session_state.search_results is not None:
+            df_results = st.session_state.search_results
+            st.markdown(f"### Results: {len(df_results)} records found")
+            st.dataframe(df_results, use_container_width=True)
+            
+            st.markdown("---")
+            if st.button("Custom Analytics"):
+                st.session_state.show_custom_analytics = True
+            
+            if st.session_state.get('show_custom_analytics', False):
+                render_analytics(df_results, "Custom Analytics")
