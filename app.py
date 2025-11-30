@@ -5,6 +5,7 @@ import database as db
 from datetime import datetime
 import questionnaires as q
 import importlib
+import calculations as calc
 
 # --- Page Configuration ---
 st.set_page_config(
@@ -24,8 +25,9 @@ def calculate_odi(scores):
     # Filter out None values (unanswered questions) if any
     valid_scores = [s for s in scores if s is not None]
     
-    if not valid_scores:
-        return 0.0
+    # Constraint: If fewer than 7 sections answered, score is invalid
+    if len(valid_scores) < 7:
+        return None
         
     total_score = sum(valid_scores)
     max_possible_score = len(valid_scores) * 5
@@ -33,21 +35,7 @@ def calculate_odi(scores):
     if max_possible_score == 0:
         return 0.0
         
-    return (total_score / max_possible_score) * 100
-
-def calculate_eq5d_index(dims):
-    """
-    Calculates EQ-5D-5L Index Score.
-    NOTE: This is a placeholder. The actual calculation requires a specific 
-    'Value Set' (coefficients) for the Thai population.
-    
-    Your research team can update the logic below with the official Thai value set coefficients.
-    For now, we will return a simple sum-based placeholder or 0.
-    """
-    # TODO: REPLACE THIS WITH OFFICIAL THAI VALUE SET CALCULATION
-    # Example structure: 1 - (constant + coef_mobility + coef_selfcare + ...)
-    # Example structure: 1 - (constant + coef_mobility + coef_selfcare + ...)
-    return 0.0 
+    return (total_score / max_possible_score) * 100 
 
 @st.cache_data
 def convert_df(df):
@@ -89,37 +77,83 @@ with tab_dashboard:
         
         # 2. Charts
         st.markdown("### Analytics")
-        c1, c2 = st.columns(2)
         
-        with c1:
-            # Pain Score by Follow-up Period
-            # We want to order the periods logically
-            period_order = ["Pre-op", "2 week", "3 mo", "6 mo", "12 mo", "24 mo"]
-            df['follow_up_period'] = pd.Categorical(df['follow_up_period'], categories=period_order, ordered=True)
-            
-            avg_pain = df.groupby('follow_up_period', observed=True)['pain_score'].mean().reset_index()
-            fig_pain = px.bar(avg_pain, x='follow_up_period', y='pain_score', 
-                              title="Average Pain Score by Follow-up",
-                              color='pain_score', color_continuous_scale='RdYlGn_r')
+        # Ensure categorical order for all charts
+        period_order = ["Pre-op", "2 week", "3 mo", "6 mo", "12 mo", "24 mo"]
+        df['follow_up_period'] = pd.Categorical(df['follow_up_period'], categories=period_order, ordered=True)
+
+        # Row 1: Pain & ODI
+        r1c1, r1c2 = st.columns(2)
+        
+        with r1c1:
+            # Pain Score Distribution (Box Plot)
+            fig_pain = px.box(df, x='follow_up_period', y='pain_score', 
+                              title="Pain Score Distribution by Follow-up",
+                              color='follow_up_period')
             st.plotly_chart(fig_pain, use_container_width=True)
             
-        with c2:
+        with r1c2:
             # ODI Score Distribution
             fig_odi = px.box(df, x='follow_up_period', y='odi_score_percent',
                              title="ODI Score Distribution by Follow-up",
                              color='follow_up_period')
             st.plotly_chart(fig_odi, use_container_width=True)
 
+        # Row 2: EQ-5D & Health VAS
+        r2c1, r2c2 = st.columns(2)
+        
+        with r2c1:
+            # EQ-5D-5L Distribution
+            fig_eq = px.box(df, x='follow_up_period', y='eq5d_score',
+                            title="EQ-5D-5L Score Distribution by Follow-up",
+                            color='follow_up_period')
+            st.plotly_chart(fig_eq, use_container_width=True)
+            
+        with r2c2:
+            # EQ-VAS Health Status Distribution
+            fig_vas = px.box(df, x='follow_up_period', y='health_status',
+                             title="EQ-VAS Health Status Distribution by Follow-up",
+                             color='follow_up_period')
+            st.plotly_chart(fig_vas, use_container_width=True)
+
+        # Row 3: Satisfaction
+        r3c1, r3c2 = st.columns(2)
+        with r3c1:
+            # Satisfaction Score Distribution
+            fig_sat = px.box(df, x='follow_up_period', y='satisfaction_score',
+                             title="Satisfaction Score Distribution by Follow-up",
+                             color='follow_up_period')
+            st.plotly_chart(fig_sat, use_container_width=True)
+
 # --- TAB 2: PATIENT ---
 with tab_patient:
     
     # View 1: Patient List
     if st.session_state.patient_view == 'list':
-        col_header, col_add_btn = st.columns([4, 1])
+        
+        # Initialize delete mode state
+        if 'delete_mode' not in st.session_state:
+            st.session_state.delete_mode = False
+            
+        col_header, col_search_btn, col_delete_btn, col_add_btn = st.columns([3, 1, 1, 1])
         with col_header:
             st.markdown("### Patient Data")
+            
+        with col_search_btn:
+             if st.button("Search", use_container_width=True):
+                st.session_state.patient_view = 'search'
+                st.rerun()
+
+        with col_delete_btn:
+            # Toggle Delete Mode
+            btn_label = "Cancel Delete" if st.session_state.delete_mode else "Delete"
+            btn_type = "secondary" if st.session_state.delete_mode else "secondary"
+            if st.button(btn_label, use_container_width=True, type=btn_type):
+                st.session_state.delete_mode = not st.session_state.delete_mode
+                st.rerun()
+                
         with col_add_btn:
-            if st.button("Add New Patient Visit", use_container_width=True):
+            if st.button("Add", use_container_width=True):
                 st.session_state.patient_view = 'add'
                 st.rerun()
         
@@ -129,20 +163,51 @@ with tab_patient:
         if df.empty:
             st.info("No patients found.")
         else:
-            # Filters
-            filter_hn = st.text_input("Search by HN")
-            if filter_hn:
-                df_display = df[df['hn'].str.contains(filter_hn, case=False)]
-            else:
-                df_display = df
+            # Filters - Removed simple search as requested
+            df_display = df
                 
             # Remove visit_time from display if it exists
             if 'visit_time' in df_display.columns:
                 df_display = df_display.drop(columns=['visit_time'])
+
+            # --- Display Logic ---
+            if st.session_state.delete_mode:
+                # Select All Checkbox
+                select_all = st.checkbox("Select All Rows")
+
+                # Add a selection column
+                df_display_editor = df_display.copy()
+                df_display_editor.insert(0, "Select", select_all)
                 
-            st.dataframe(df_display, use_container_width=True)
+                # Use data_editor for selection
+                edited_df = st.data_editor(
+                    df_display_editor,
+                    hide_index=True,
+                    column_config={"Select": st.column_config.CheckboxColumn(required=True)},
+                    disabled=df_display.columns,
+                    use_container_width=True,
+                    key="data_editor"
+                )
+                
+                # Identify selected rows
+                selected_rows = edited_df[edited_df.Select]
+                
+                if not selected_rows.empty:
+                    st.error(f"Selected {len(selected_rows)} record(s) for deletion.")
+                    
+                    if st.button("Confirm Delete", type="primary"):
+                        # Delete logic
+                        for index, row in selected_rows.iterrows():
+                            db.delete_visit(row['id'])
+                        
+                        st.success(f"Deleted {len(selected_rows)} records.")
+                        st.session_state.delete_mode = False
+                        st.rerun()
+            else:
+                # Normal Display
+                st.dataframe(df_display, use_container_width=True)
             
-            # Actions (Export & Delete)
+            # Actions (Export) - Delete is now handled above
             st.markdown("---")
             col_actions1, col_actions2 = st.columns([1, 4])
             
@@ -156,15 +221,6 @@ with tab_patient:
                     "text/csv",
                     key='download-csv'
                 )
-                
-            with col_actions2:
-                # Delete Record
-                with st.expander("Delete Record"):
-                    del_id = st.number_input("Enter ID to delete", min_value=1, step=1)
-                    if st.button("Delete Visit"):
-                        db.delete_visit(del_id)
-                        st.warning(f"Record ID {del_id} deleted. Please refresh.")
-                        st.rerun()
 
     # View 2: Add New Patient Visit Form
     elif st.session_state.patient_view == 'add':
@@ -194,18 +250,25 @@ with tab_patient:
                     if st.button("Process Import"):
                         try:
                             if uploaded_file.name.endswith('.csv'):
-                                try:
-                                    # Try UTF-8 first
-                                    df_import = pd.read_csv(uploaded_file, encoding='utf-8')
-                                except UnicodeDecodeError:
-                                    # Fallback to Thai Windows encoding (cp874)
-                                    uploaded_file.seek(0)
-                                    df_import = pd.read_csv(uploaded_file, encoding='cp874')
+                                    encodings = ['utf-8-sig', 'utf-8', 'cp874', 'tis-620']
+                                    for encoding in encodings:
+                                        try:
+                                            uploaded_file.seek(0)
+                                            df_import = pd.read_csv(uploaded_file, encoding=encoding)
+                                            break
+                                        except UnicodeDecodeError:
+                                            continue
+                                    else:
+                                        raise ValueError("Could not determine file encoding")
                             else:
                                 df_import = pd.read_excel(uploaded_file)
                             
                             # Normalize columns: lowercase and strip whitespace
                             df_import.columns = df_import.columns.str.strip().str.lower()
+                            
+                            # Normalize Gender (Thai -> English)
+                            if 'gender' in df_import.columns:
+                                df_import['gender'] = df_import['gender'].replace({'ชาย': 'Male', 'หญิง': 'Female'})
 
                             # Basic validation
                             if 'hn' not in df_import.columns:
@@ -224,6 +287,35 @@ with tab_patient:
                                             # Convert dates/times to string if needed
                                             if isinstance(value, (pd.Timestamp, datetime)):
                                                 visit_data[key] = str(value)
+
+                                    # Auto-calculate ODI Score
+                                    odi_scores = []
+                                    for i in range(1, 11):
+                                        q_key = f'odi_q{i}'
+                                        # Ensure key exists and is numeric
+                                        if q_key in visit_data and visit_data[q_key] is not None:
+                                            try:
+                                                odi_scores.append(float(visit_data[q_key]))
+                                            except (ValueError, TypeError):
+                                                pass # Skip invalid values
+                                    
+                                    visit_data['odi_score_percent'] = calculate_odi(odi_scores)
+
+                                    # Auto-calculate EQ-5D Score
+                                    try:
+                                        eq_dims = []
+                                        for i in range(1, 6):
+                                            key = f'eq5d_{i}'
+                                            if key in visit_data and visit_data[key] is not None:
+                                                eq_dims.append(int(float(visit_data[key]))) # Handle float inputs like 1.0
+                                            else:
+                                                eq_dims.append(None)
+                                        
+                                        # Only calculate if all 5 dims are present
+                                        if all(d is not None for d in eq_dims):
+                                            visit_data['eq5d_score'] = calc.calculate_eq5d_score(*eq_dims)
+                                    except (ValueError, TypeError):
+                                        pass # Skip if invalid data
 
                                     db.add_visit(visit_data)
                                     success_count += 1
@@ -381,8 +473,20 @@ with tab_patient:
         # Unpack scores
         eq1, eq2, eq3, eq4, eq5 = eq_scores
         
+        st.markdown("""
+        - เราอยากทราบว่าสุขภาพของท่านเป็นอย่างไรในวันนี้
+        - สเกลวัดสุขภาพนี้มีตัวเลขตั้งแต่ 0-100
+        - 100 หมายถึงสุขภาพดีที่สุด ตามความคิดของท่าน
+        - 0 หมายถึง สุขภาพแย่ที่สุดตามความคิดของท่าน
+        - โปรดเลือกตัวเลขบนสเกลเพื่อระบุว่าสุขภาพของท่านเป็นอย่างไรในวันนี้
+        """)
         health_status = st.slider("EQ-VAS Health Status (0-100)", 0, 100, 80)
-        satisfaction = st.slider("Satisfaction Score (PREM)", 0, 10, 8)
+        
+        satisfaction = None
+        if follow_up != "Pre-op":
+            st.markdown("---")
+            st.markdown("##### Satisfaction Score (PREM)")
+            satisfaction = st.slider("Score (0-10)", 0, 10, 8)
         
         note = st.text_area("Notes")
 
@@ -396,8 +500,8 @@ with tab_patient:
                 # Calculate Scores
                 odi_scores = [odi_q1, odi_q2, odi_q3, odi_q4, odi_q5, odi_q6, odi_q7, odi_q8, odi_q9, odi_q10]
                 odi_percent = calculate_odi(odi_scores)
-                eq_dims = [eq1, eq2, eq3, eq4, eq5]
-                eq_score = calculate_eq5d_index(eq_dims)
+                # eq_dims = [eq1, eq2, eq3, eq4, eq5]
+                eq_score = calc.calculate_eq5d_score(eq1, eq2, eq3, eq4, eq5)
                 
                 # Prepare Data Dict
                 visit_data = {
@@ -427,3 +531,126 @@ with tab_patient:
                 st.success(f"Visit saved for HN {hn}!")
                 st.session_state.patient_view = 'list'
                 st.rerun()
+
+    # View 3: Advanced Search
+    elif st.session_state.patient_view == 'search':
+        col_title, col_back = st.columns([5, 1])
+        with col_title:
+            st.markdown("### Advanced Search")
+        with col_back:
+            if st.button("Back", use_container_width=True):
+                st.session_state.patient_view = 'list'
+                st.rerun()
+        
+        # Search Form
+        with st.form("search_form"):
+            st.markdown("#### Search Criteria")
+            
+            # Row 1: Basic Info
+            c1, c2, c3, c4 = st.columns(4)
+            with c1:
+                s_hn = st.text_input("HN")
+            with c2:
+                s_gender = st.multiselect("Gender", ["Male", "Female"])
+            with c3:
+                s_age_min, s_age_max = st.slider("Age Range", 0, 120, (0, 120))
+            with c4:
+                s_follow_up = st.multiselect("Follow-up Period", ["Pre-op", "2 week", "3 mo", "6 mo", "12 mo", "24 mo"])
+
+            # Row 2: Dates
+            c5, c6 = st.columns(2)
+            with c5:
+                s_visit_date_start = st.date_input("Visit Date (Start)", value=None)
+                s_visit_date_end = st.date_input("Visit Date (End)", value=None)
+            with c6:
+                s_op_date_start = st.date_input("Operation Date (Start)", value=None)
+                s_op_date_end = st.date_input("Operation Date (End)", value=None)
+
+            # Row 3: Procedure Info
+            c7, c8, c9 = st.columns(3)
+            with c7:
+                s_surgeon = st.text_input("Surgeon")
+            with c8:
+                s_assistant = st.text_input("Assistant")
+            with c9:
+                s_op_type = st.text_input("Operation Type")
+
+            st.markdown("#### Scores")
+            # Row 4: Scores
+            c10, c11 = st.columns(2)
+            with c10:
+                s_pain_min, s_pain_max = st.slider("Pain VAS Score (0-10)", 0, 10, (0, 10))
+            with c11:
+                s_odi_min, s_odi_max = st.slider("ODI Score % (0-100)", 0.0, 100.0, (0.0, 100.0))
+            
+            c12, c13, c14 = st.columns(3)
+            with c12:
+                s_eq_score_min = st.number_input("Min EQ5D Score", value=-1.0, step=0.1)
+                s_eq_score_max = st.number_input("Max EQ5D Score", value=1.0, step=0.1)
+            with c13:
+                s_health_min, s_health_max = st.slider("EQ-VAS Health Status (0-100)", 0, 100, (0, 100))
+            with c14:
+                s_sat_min, s_sat_max = st.slider("Satisfaction Score (0-10)", 0, 10, (0, 10))
+
+            submitted_search = st.form_submit_button("Submit Search", type="primary")
+
+        if submitted_search:
+            df = db.get_all_visits()
+            
+            if df.empty:
+                st.warning("No data to search.")
+            else:
+                # Apply Filters
+                # Apply Filters
+                if s_hn:
+                    # Ensure HN is string and strip whitespace for comparison
+                    df = df[df['hn'].astype(str).str.contains(s_hn.strip(), case=False, na=False)]
+                if s_gender:
+                    df = df[df['gender'].isin(s_gender)]
+                
+                if s_age_min > 0 or s_age_max < 120:
+                    df = df[(df['age'] >= s_age_min) & (df['age'] <= s_age_max)]
+                
+                if s_follow_up:
+                    df = df[df['follow_up_period'].isin(s_follow_up)]
+                
+                # Date Filters
+                if s_visit_date_start:
+                    df = df[pd.to_datetime(df['visit_date'], errors='coerce').dt.date >= s_visit_date_start]
+                if s_visit_date_end:
+                    df = df[pd.to_datetime(df['visit_date'], errors='coerce').dt.date <= s_visit_date_end]
+                    
+                if s_op_date_start:
+                    df = df[pd.to_datetime(df['operation_date'], errors='coerce').dt.date >= s_op_date_start]
+                if s_op_date_end:
+                    df = df[pd.to_datetime(df['operation_date'], errors='coerce').dt.date <= s_op_date_end]
+
+                if s_surgeon:
+                    df = df[df['surgeon'].str.contains(s_surgeon, case=False, na=False)]
+                if s_assistant:
+                    df = df[df['assistant'].str.contains(s_assistant, case=False, na=False)]
+                if s_op_type:
+                    df = df[df['operation_type'].str.contains(s_op_type, case=False, na=False)]
+
+                if s_pain_min > 0 or s_pain_max < 10:
+                    df = df[(df['pain_score'] >= s_pain_min) & (df['pain_score'] <= s_pain_max)]
+                
+                if s_odi_min > 0.0 or s_odi_max < 100.0:
+                    df = df[(df['odi_score_percent'] >= s_odi_min) & (df['odi_score_percent'] <= s_odi_max)]
+                
+                # EQ5D Score
+                # Only filter if user changed defaults (-1.0 to 1.0)
+                if s_eq_score_min > -1.0 or s_eq_score_max < 1.0:
+                     df = df[(df['eq5d_score'].fillna(-99) >= s_eq_score_min) & (df['eq5d_score'].fillna(99) <= s_eq_score_max)]
+                
+                if s_health_min > 0 or s_health_max < 100:
+                    df = df[(df['health_status'] >= s_health_min) & (df['health_status'] <= s_health_max)]
+                
+                # Satisfaction (Handle None for Pre-op)
+                # Only filter if range is restricted
+                if s_sat_min > 0 or s_sat_max < 10:
+                    df = df[df['satisfaction_score'].notna()]
+                    df = df[(df['satisfaction_score'] >= s_sat_min) & (df['satisfaction_score'] <= s_sat_max)]
+                
+                st.markdown(f"### Results: {len(df)} records found")
+                st.dataframe(df, use_container_width=True)
