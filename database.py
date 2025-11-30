@@ -93,6 +93,31 @@ def delete_visit(visit_id):
     conn.commit()
     conn.close()
 
+def update_visit(visit_id, data):
+    """Updates an existing visit record.
+    
+    Args:
+        visit_id (int): The ID of the visit to update.
+        data (dict): A dictionary containing the fields to update.
+    """
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    
+    # Remove 'id' from data if present to avoid updating primary key
+    if 'id' in data:
+        del data['id']
+        
+    # Prepare the SQL query dynamically
+    set_clause = ', '.join([f"{key} = ?" for key in data.keys()])
+    sql = f'UPDATE patient_visits SET {set_clause} WHERE id = ?'
+    
+    values = list(data.values())
+    values.append(visit_id)
+    
+    c.execute(sql, values)
+    conn.commit()
+    conn.close()
+
 def get_patient_history(hn):
     """Retrieves all visits for a specific HN to help with auto-filling."""
     conn = sqlite3.connect(DB_FILE)

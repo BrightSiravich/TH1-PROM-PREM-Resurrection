@@ -219,13 +219,18 @@ with tab_patient:
         if 'delete_mode' not in st.session_state:
             st.session_state.delete_mode = False
             
-        col_header, col_search_btn, col_delete_btn, col_add_btn = st.columns([3, 1, 1, 1])
+        col_header, col_search_btn, col_modify_btn, col_delete_btn, col_add_btn = st.columns([3, 1, 1, 1, 1])
         with col_header:
             st.markdown("### Patient Data")
             
         with col_search_btn:
              if st.button("Search", use_container_width=True):
                 st.session_state.patient_view = 'search'
+                st.rerun()
+
+        with col_modify_btn:
+            if st.button("Modify", use_container_width=True):
+                st.session_state.patient_view = 'modify'
                 st.rerun()
 
         with col_delete_btn:
@@ -305,6 +310,83 @@ with tab_patient:
                     "text/csv",
                     key='download-csv'
                 )
+
+    # View 4: Modify Data
+    elif st.session_state.patient_view == 'modify':
+        st.markdown("### Modify Patient Data")
+        
+        # Initialize session state for modify dataframe if not present
+        if 'modify_df' not in st.session_state:
+            st.session_state.modify_df = db.get_all_visits()
+
+        df = st.session_state.modify_df
+        
+        if df.empty:
+            st.info("No data to modify.")
+            if st.button("Back"):
+                del st.session_state.modify_df # Clean up
+                st.session_state.patient_view = 'list'
+                st.rerun()
+        else:
+            # Search UI
+            search_query = st.text_input("Search", placeholder="Search by HN, Name, etc...")
+            
+            # Filter Logic
+            if search_query:
+                # Simple string search across all columns
+                mask = df.astype(str).apply(lambda x: x.str.contains(search_query, case=False, na=False)).any(axis=1)
+                df_display = df[mask]
+            else:
+                df_display = df
+
+            # Editable Dataframe
+            edited_df = st.data_editor(
+                df_display,
+                hide_index=True,
+                disabled=["id"], # Disable editing ID
+                use_container_width=True,
+                key="modify_editor"
+            )
+            
+            col_save, col_back = st.columns([1, 1])
+            
+            with col_save:
+                if st.button("Save", type="primary", use_container_width=True):
+                    # Save logic
+                    try:
+                        # Iterate through edited dataframe and update DB
+                        # Note: This updates ALL rows. For large datasets, we should track changes.
+                        # But for this scale, updating all is acceptable or we can rely on st.data_editor state if needed.
+                        # A safer approach for now is to update row by row.
+                        
+                        count = 0
+                        for index, row in edited_df.iterrows():
+                            # Convert row to dict
+                            data = row.to_dict()
+                            visit_id = data['id']
+                            
+                            # Handle NaNs
+                            for key, value in data.items():
+                                if pd.isna(value):
+                                    data[key] = None
+                            
+                            db.update_visit(visit_id, data)
+                            count += 1
+                            
+                        st.success(f"Successfully saved {count} records!")
+                        if 'modify_df' in st.session_state:
+                            del st.session_state.modify_df
+                        st.session_state.patient_view = 'list'
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Error saving data: {e}")
+            
+            with col_back:
+                if st.button("Back", use_container_width=True):
+                    if 'modify_df' in st.session_state:
+                        del st.session_state.modify_df
+                    st.session_state.patient_view = 'list'
+                    st.rerun()
 
     # View 2: Add New Patient Visit Form
     elif st.session_state.patient_view == 'add':
