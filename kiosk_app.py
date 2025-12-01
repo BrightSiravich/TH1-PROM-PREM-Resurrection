@@ -1,9 +1,9 @@
-import streamlit as st
 # --- Page Configuration ---
 st.set_page_config(
     page_title="Patient Visit Form",
     layout="wide"
 )
+import streamlit as st
 import pandas as pd
 from datetime import datetime
 import db_utils as db
