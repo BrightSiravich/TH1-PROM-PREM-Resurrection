@@ -500,6 +500,14 @@ with tab_patient:
                                 # Rename hn to patient_id if needed
                                 if 'hn' in df_import.columns and 'patient_id' not in df_import.columns:
                                     df_import = df_import.rename(columns={'hn': 'patient_id'})
+                                
+                                # Rename pain_score to vas_score if needed
+                                if 'pain_score' in df_import.columns and 'vas_score' not in df_import.columns:
+                                    df_import = df_import.rename(columns={'pain_score': 'vas_score'})
+                                    
+                                # Rename odi_score_percent to odi_score if needed
+                                if 'odi_score_percent' in df_import.columns and 'odi_score' not in df_import.columns:
+                                    df_import = df_import.rename(columns={'odi_score_percent': 'odi_score'})
 
                                 success_count = 0
                                 for index, row in df_import.iterrows():

@@ -1,2 +1,2 @@
-﻿hn,visit_date,gender,age,operation_date,surgeon,assistant,operation_type,procedure_type,follow_up_period,pain_score,odi_q1,odi_q2,odi_q3,odi_q4,odi_q5,odi_q6,odi_q7,odi_q8,odi_q9,odi_q10,eq5d_1,eq5d_2,eq5d_3,eq5d_4,eq5d_5,health_status,satisfaction_score,note
+﻿hn,visit_date,gender,age,operation_date,surgeon,assistant,operation_type,procedure_type,follow_up_period,vas_score,odi_q1,odi_q2,odi_q3,odi_q4,odi_q5,odi_q6,odi_q7,odi_q8,odi_q9,odi_q10,eq5d_1,eq5d_2,eq5d_3,eq5d_4,eq5d_5,health_status,satisfaction_score,note
 ExampleHN123,2025-11-25,Male,45,2025-11-25,Dr. Siravich,Dr. Assistant,TLIF,TL Spine Procedure,Pre-op,5,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,80,8,Imported record
