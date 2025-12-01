@@ -837,7 +837,7 @@ with tab_patient:
 
         if submitted_search:
             st.session_state.show_custom_analytics = False
-            df_search = db.get_all_visits()
+            df_search = db.get_all_patients()
             
             if df_search.empty:
                 st.warning("No data to search.")
