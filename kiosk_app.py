@@ -227,3 +227,26 @@ else:
             db.add_patient(visit_data)
             st.session_state.submitted = True
             st.rerun()
+
+# --- Footer ---
+st.markdown(
+    """
+    <style>
+    .footer {
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        background-color: blue;
+        color: white;
+        text-align: center;
+        padding: 10px;
+        z-index: 999;
+    }
+    </style>
+    <div class="footer">
+        <p>Copyright © 2025 Dr. BRIGHT SIRAVICH</p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)

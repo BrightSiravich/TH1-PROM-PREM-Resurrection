@@ -911,3 +911,26 @@ with tab_patient:
             
             if st.session_state.get('show_custom_analytics', False):
                 render_analytics(df_results, "Custom Analytics")
+
+# --- Footer ---
+st.markdown(
+    """
+    <style>
+    .footer {
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        background-color: blue;
+        color: white;
+        text-align: center;
+        padding: 10px;
+        z-index: 999;
+    }
+    </style>
+    <div class="footer">
+        <p>Copyright © 2025 Dr. BRIGHT SIRAVICH</p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
