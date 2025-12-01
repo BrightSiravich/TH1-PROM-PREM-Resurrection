@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-import database as db
+import db_utils as db
 import calculations as calc
 import odi_content as odi_content
 
@@ -224,6 +224,6 @@ else:
                 "note": note
             }
             
-            db.add_visit(visit_data)
+            db.add_patient(visit_data)
             st.session_state.submitted = True
             st.rerun()

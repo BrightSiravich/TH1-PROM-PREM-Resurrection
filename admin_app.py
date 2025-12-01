@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import database as db
+import db_utils as db
 from datetime import datetime
 import questionnaires as q
 import importlib
@@ -248,7 +248,7 @@ tab_dashboard, tab_patient = st.tabs(["Dashboard", "Patient"])
 # --- TAB 1: DASHBOARD ---
 with tab_dashboard:
     # Load Data
-    df = db.get_all_visits()
+    df = db.get_all_patients()
 
     if df.empty:
         st.info("No data found. Please add a patient visit in the Patient tab.")
@@ -293,7 +293,7 @@ with tab_patient:
                 st.rerun()
         
         # Load Data (Refresh)
-        df = db.get_all_visits()
+        df = db.get_all_patients()
         
         if df.empty:
             st.info("No patients found.")
@@ -344,7 +344,7 @@ with tab_patient:
                     if st.button("Confirm Delete", type="primary"):
                         # Delete logic
                         for index, row in selected_rows.iterrows():
-                            db.delete_visit(row['id'])
+                            db.delete_patient(row['id'])
                         
                         st.success(f"Deleted {len(selected_rows)} records.")
                         st.session_state.delete_mode = False
@@ -374,7 +374,7 @@ with tab_patient:
         
         # Initialize session state for modify dataframe if not present
         if 'modify_df' not in st.session_state:
-            st.session_state.modify_df = db.get_all_visits()
+            st.session_state.modify_df = db.get_all_patients()
 
         df = st.session_state.modify_df
         
@@ -427,7 +427,7 @@ with tab_patient:
                                 if pd.isna(value):
                                     data[key] = None
                             
-                            db.update_visit(visit_id, data)
+                            db.update_patient(visit_id, data)
                             count += 1
                             
                         st.success(f"Successfully saved {count} records!")
@@ -544,7 +544,7 @@ with tab_patient:
                                     except (ValueError, TypeError):
                                         pass # Skip if invalid data
 
-                                    db.add_visit(visit_data)
+                                    db.add_patient(visit_data)
                                     success_count += 1
                                 st.success(f"Imported {success_count} records!")
                                 st.session_state.patient_view = 'list'
@@ -754,7 +754,7 @@ with tab_patient:
                     "note": note
                 }
                 
-                db.add_visit(visit_data)
+                db.add_patient(visit_data)
                 st.success(f"Visit saved for Patient ID {hn}!")
                 st.session_state.patient_view = 'list'
                 st.rerun()
