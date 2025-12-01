@@ -1,15 +1,16 @@
 import streamlit as st
+# --- Page Configuration ---
+st.set_page_config(
+    page_title="Patient Visit Form",
+    layout="wide"
+)
 import pandas as pd
 from datetime import datetime
 import db_utils as db
 import calculations as calc
 import odi_content as odi_content
 
-# --- Page Configuration ---
-st.set_page_config(
-    page_title="Patient Visit Form",
-    layout="wide"
-)
+
 
 # --- Helper Functions ---
 def calculate_odi(scores):
