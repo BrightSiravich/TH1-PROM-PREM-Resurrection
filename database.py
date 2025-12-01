@@ -14,7 +14,7 @@ def init_db():
     c.execute('''
         CREATE TABLE IF NOT EXISTS patient_visits (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            hn TEXT,
+            patient_id TEXT, -- Renamed from hn
             visit_date TEXT,
             -- visit_time TEXT, -- Removed
             gender TEXT,
@@ -25,7 +25,7 @@ def init_db():
             operation_type TEXT,
             procedure_type TEXT,
             follow_up_period TEXT,
-            pain_score INTEGER,
+            vas_score INTEGER, -- Renamed from pain_score
             odi_q1 INTEGER,
             odi_q2 INTEGER,
             odi_q3 INTEGER,
@@ -36,7 +36,7 @@ def init_db():
             odi_q8 INTEGER,
             odi_q9 INTEGER,
             odi_q10 INTEGER,
-            odi_score_percent REAL,
+            odi_score REAL, -- Renamed from odi_score_percent
             eq5d_1 INTEGER,
             eq5d_2 INTEGER,
             eq5d_3 INTEGER,
@@ -53,7 +53,31 @@ def init_db():
     try:
         c.execute("ALTER TABLE patient_visits ADD COLUMN procedure_type TEXT")
     except sqlite3.OperationalError:
-        # Column likely already exists
+        pass
+
+    # Migration: Rename columns (SQLite 3.25+)
+    migrations = [
+        ("hn", "patient_id"),
+        ("pain_score", "vas_score"),
+        ("odi_score_percent", "odi_score")
+    ]
+    
+    for old_name, new_name in migrations:
+        try:
+            # Check if old column exists
+            c.execute(f"SELECT {old_name} FROM patient_visits LIMIT 1")
+            # If successful, rename
+            c.execute(f"ALTER TABLE patient_visits RENAME COLUMN {old_name} TO {new_name}")
+            print(f"Migrated column {old_name} to {new_name}")
+        except sqlite3.OperationalError:
+            # Old column likely doesn't exist (already renamed or never existed)
+            pass
+
+    # Migration: Drop eq5d_code column (SQLite 3.35+)
+    try:
+        c.execute("ALTER TABLE patient_visits DROP COLUMN eq5d_code")
+    except sqlite3.OperationalError:
+        # Column might not exist or SQLite version too old
         pass
         
     conn.commit()
@@ -118,11 +142,11 @@ def update_visit(visit_id, data):
     conn.commit()
     conn.close()
 
-def get_patient_history(hn):
-    """Retrieves all visits for a specific HN to help with auto-filling."""
+def get_patient_history(patient_id):
+    """Retrieves all visits for a specific Patient ID to help with auto-filling."""
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
-    c.execute("SELECT * FROM patient_visits WHERE hn=? ORDER BY id DESC LIMIT 1", (hn,))
+    c.execute("SELECT * FROM patient_visits WHERE patient_id=? ORDER BY id DESC LIMIT 1", (patient_id,))
     row = c.fetchone()
     conn.close()
     
@@ -132,7 +156,7 @@ def get_patient_history(hn):
         # but a better approach for auto-fill is to return a dict.
         # Let's use pandas for easier dict conversion
         df = get_all_visits()
-        patient_df = df[df['hn'] == hn].sort_values(by='id', ascending=False)
+        patient_df = df[df['patient_id'] == patient_id].sort_values(by='id', ascending=False)
         if not patient_df.empty:
             return patient_df.iloc[0].to_dict()
             

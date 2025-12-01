@@ -14,6 +14,52 @@ st.set_page_config(
     layout="wide"
 )
 
+# --- Password Protection ---
+# NOTE: Ensure you have a .streamlit/secrets.toml file with:
+# ADMIN_PASSWORD = "your_password"
+
+def check_password():
+    """Returns `True` if the user had the correct password."""
+
+    def password_entered():
+        """Checks whether a password entered by the user is correct."""
+        if st.session_state["password"] == st.secrets["ADMIN_PASSWORD"]:
+            st.session_state["password_correct"] = True
+            del st.session_state["password"]  # don't store password
+        else:
+            st.session_state["password_correct"] = False
+
+    if "password_correct" not in st.session_state:
+        # First run, show input for password.
+        st.text_input(
+            "Password", type="password", on_change=password_entered, key="password"
+        )
+        return False
+    elif not st.session_state["password_correct"]:
+        # Password not correct, show input + error.
+        st.text_input(
+            "Password", type="password", on_change=password_entered, key="password"
+        )
+        st.error("😕 Password incorrect")
+        return False
+    else:
+        # Password correct.
+        return True
+
+if not check_password():
+    st.stop()  # Do not continue if check_password is not True.
+
+# --- Main Application ---
+
+# Header with Refresh Button
+col_title, col_refresh = st.columns([6, 1])
+with col_title:
+    st.title("BJC ESS Registry Dashboard")
+with col_refresh:
+    if st.button("Refresh Data", type="primary", use_container_width=True):
+        st.cache_data.clear()
+        st.rerun()
+
 # --- Helper Functions for Calculations ---
 
 def calculate_odi(scores):
@@ -52,12 +98,12 @@ def render_analytics(df, title="Overall Analytics"):
     # 1. Calculate Metrics
     
     # Filter for patients with Pre-op data
-    pre_op_df = df[df['follow_up_period'] == 'Pre-op'][['hn', 'pain_score', 'odi_score_percent', 'eq5d_score', 'health_status']]
+    pre_op_df = df[df['follow_up_period'] == 'Pre-op'][['patient_id', 'vas_score', 'odi_score', 'eq5d_score', 'health_status']]
     
     # Filter for patients with Follow-up data (excluding Pre-op)
-    follow_up_df = df[df['follow_up_period'] != 'Pre-op'][['hn', 'pain_score', 'odi_score_percent', 'eq5d_score', 'health_status', 'satisfaction_score']]
+    follow_up_df = df[df['follow_up_period'] != 'Pre-op'][['patient_id', 'vas_score', 'odi_score', 'eq5d_score', 'health_status', 'satisfaction_score']]
     
-    patients_with_pre_op = pre_op_df['hn'].unique()
+    patients_with_pre_op = pre_op_df['patient_id'].unique()
     
     # Initialize counters
     pain_improved_count = 0
@@ -69,27 +115,27 @@ def render_analytics(df, title="Overall Analytics"):
     vas_improved_count = 0
     vas_total_eval = 0
     
-    for hn in patients_with_pre_op:
-        patient_pre = pre_op_df[pre_op_df['hn'] == hn].iloc[0]
-        patient_post = follow_up_df[follow_up_df['hn'] == hn]
+    for pid in patients_with_pre_op:
+        patient_pre = pre_op_df[pre_op_df['patient_id'] == pid].iloc[0]
+        patient_post = follow_up_df[follow_up_df['patient_id'] == pid]
         
         if patient_post.empty:
             continue
             
         # Pain Improvement (Decrease)
-        if pd.notna(patient_pre['pain_score']):
-            valid_post = patient_post['pain_score'].dropna()
+        if pd.notna(patient_pre['vas_score']):
+            valid_post = patient_post['vas_score'].dropna()
             if not valid_post.empty:
                 pain_total_eval += 1
-                if (valid_post < patient_pre['pain_score']).any():
+                if (valid_post < patient_pre['vas_score']).any():
                     pain_improved_count += 1
                     
         # ODI Improvement (Decrease)
-        if pd.notna(patient_pre['odi_score_percent']):
-            valid_post = patient_post['odi_score_percent'].dropna()
+        if pd.notna(patient_pre['odi_score']):
+            valid_post = patient_post['odi_score'].dropna()
             if not valid_post.empty:
                 odi_total_eval += 1
-                if (valid_post < patient_pre['odi_score_percent']).any():
+                if (valid_post < patient_pre['odi_score']).any():
                     odi_improved_count += 1
 
         # EQ5D Improvement (Increase)
@@ -121,7 +167,7 @@ def render_analytics(df, title="Overall Analytics"):
     # Display Metrics
     # Row 1
     m1, m2, m3 = st.columns(3)
-    m1.metric("Total Patients", df['hn'].nunique())
+    m1.metric("Total Patients", df['patient_id'].nunique())
     m2.metric("Total Visits", len(df))
     m3.metric("Avg Satisfaction", f"{avg_sat:.1f}/10")
     
@@ -145,15 +191,15 @@ def render_analytics(df, title="Overall Analytics"):
     
     with r1c1:
         # Pain Score Distribution (Box Plot)
-        fig_pain = px.box(df, x='follow_up_period', y='pain_score', 
-                          title="Pain Score Distribution by Follow-up",
+        fig_pain = px.box(df, x='follow_up_period', y='vas_score', 
+                          title="VAS Pain Score Distribution by Follow-up",
                           color='follow_up_period',
                           category_orders={"follow_up_period": period_order})
         st.plotly_chart(fig_pain, use_container_width=True)
         
     with r1c2:
         # ODI Score Distribution
-        fig_odi = px.box(df, x='follow_up_period', y='odi_score_percent',
+        fig_odi = px.box(df, x='follow_up_period', y='odi_score',
                          title="ODI Score Distribution by Follow-up",
                          color='follow_up_period',
                          category_orders={"follow_up_period": period_order})
@@ -190,7 +236,7 @@ def render_analytics(df, title="Overall Analytics"):
 
 # --- Main Application ---
 
-st.title("BJC ESS Registry Dashboard")
+# st.title("BJC ESS Registry Dashboard") # Moved to top
 
 # Initialize session state for Patient tab navigation
 if 'patient_view' not in st.session_state:
@@ -258,6 +304,17 @@ with tab_patient:
             # Remove visit_time from display if it exists
             if 'visit_time' in df_display.columns:
                 df_display = df_display.drop(columns=['visit_time'])
+            
+            # Remove eq5d_code if it exists (legacy)
+            if 'eq5d_code' in df_display.columns:
+                df_display = df_display.drop(columns=['eq5d_code'])
+
+            # Reorder columns to put 'note' last
+            cols = list(df_display.columns)
+            if 'note' in cols:
+                cols.remove('note')
+                cols.append('note')
+                df_display = df_display[cols]
 
             # --- Display Logic ---
             if st.session_state.delete_mode:
@@ -329,7 +386,7 @@ with tab_patient:
                 st.rerun()
         else:
             # Search UI
-            search_query = st.text_input("Search", placeholder="Search by HN, Name, etc...")
+            search_query = st.text_input("Search", placeholder="Search by Patient ID, Name, etc...")
             
             # Filter Logic
             if search_query:
@@ -437,9 +494,13 @@ with tab_patient:
                                 df_import['gender'] = df_import['gender'].replace({'ชาย': 'Male', 'หญิง': 'Female'})
 
                             # Basic validation
-                            if 'hn' not in df_import.columns:
-                                st.error("File must contain 'hn' column.")
+                            if 'patient_id' not in df_import.columns and 'hn' not in df_import.columns:
+                                st.error("File must contain 'patient_id' (or 'hn') column.")
                             else:
+                                # Rename hn to patient_id if needed
+                                if 'hn' in df_import.columns and 'patient_id' not in df_import.columns:
+                                    df_import = df_import.rename(columns={'hn': 'patient_id'})
+
                                 success_count = 0
                                 for index, row in df_import.iterrows():
                                     # Convert row to dict and clean up
@@ -465,7 +526,7 @@ with tab_patient:
                                             except (ValueError, TypeError):
                                                 pass # Skip invalid values
                                     
-                                    visit_data['odi_score_percent'] = calculate_odi(odi_scores)
+                                    visit_data['odi_score'] = calculate_odi(odi_scores)
 
                                     # Auto-calculate EQ-5D Score
                                     try:
@@ -508,7 +569,7 @@ with tab_patient:
         st.markdown("#### Patient Details")
         col1, col2 = st.columns(2)
         with col1:
-            hn = st.text_input("HN (Hospital Number)")
+            hn = st.text_input("Patient ID (HN)")
             gender = st.selectbox("Gender", ["Male", "Female"])
         with col2:
             visit_date = st.date_input("Visit Date", datetime.now())
@@ -671,7 +732,7 @@ with tab_patient:
                 
                 # Prepare Data Dict
                 visit_data = {
-                    "hn": hn,
+                    "patient_id": hn,
                     "visit_date": str(visit_date),
                     # "visit_time": str(visit_time), # Removed
                     "gender": gender,
@@ -682,10 +743,10 @@ with tab_patient:
                     "operation_type": op_type,
                     "procedure_type": proc_type,
                     "follow_up_period": follow_up,
-                    "pain_score": pain_score,
+                    "vas_score": pain_score,
                     "odi_q1": odi_q1, "odi_q2": odi_q2, "odi_q3": odi_q3, "odi_q4": odi_q4, "odi_q5": odi_q5,
                     "odi_q6": odi_q6, "odi_q7": odi_q7, "odi_q8": odi_q8, "odi_q9": odi_q9, "odi_q10": odi_q10,
-                    "odi_score_percent": odi_percent,
+                    "odi_score": odi_percent,
                     "eq5d_1": eq1, "eq5d_2": eq2, "eq5d_3": eq3, "eq5d_4": eq4, "eq5d_5": eq5,
                     "eq5d_score": eq_score,
                     "health_status": health_status,
@@ -694,7 +755,7 @@ with tab_patient:
                 }
                 
                 db.add_visit(visit_data)
-                st.success(f"Visit saved for HN {hn}!")
+                st.success(f"Visit saved for Patient ID {hn}!")
                 st.session_state.patient_view = 'list'
                 st.rerun()
 
@@ -721,7 +782,7 @@ with tab_patient:
             # Row 1: Basic Info
             c1, c2, c3, c4 = st.columns(4)
             with c1:
-                s_hn = st.text_input("HN")
+                s_hn = st.text_input("Patient ID")
             with c2:
                 s_gender = st.multiselect("Gender", ["Male", "Female"])
             with c3:
@@ -751,7 +812,7 @@ with tab_patient:
             # Row 4: Scores
             c10, c11 = st.columns(2)
             with c10:
-                s_pain_min, s_pain_max = st.slider("Pain VAS Score (0-10)", 0, 10, (0, 10))
+                s_pain_min, s_pain_max = st.slider("VAS Pain Score (0-10)", 0, 10, (0, 10))
             with c11:
                 s_odi_min, s_odi_max = st.slider("ODI Score % (0-100)", 0.0, 100.0, (0.0, 100.0))
             
@@ -779,7 +840,7 @@ with tab_patient:
                 # Apply Filters
                 if s_hn:
                     # Ensure HN is string and strip whitespace for comparison
-                    df_search = df_search[df_search['hn'].astype(str).str.contains(s_hn.strip(), case=False, na=False)]
+                    df_search = df_search[df_search['patient_id'].astype(str).str.contains(s_hn.strip(), case=False, na=False)]
                 if s_gender:
                     df_search = df_search[df_search['gender'].isin(s_gender)]
                 
