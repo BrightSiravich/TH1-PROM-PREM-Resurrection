@@ -578,7 +578,7 @@ with tab_patient:
         st.markdown("#### Patient Details")
         col1, col2 = st.columns(2)
         with col1:
-            hn = st.text_input("Patient ID (HN)")
+            hn = st.text_input("Patient ID (HN) :red[*]")
             gender = st.selectbox("Gender", ["Male", "Female"])
         with col2:
             visit_date = st.date_input("Visit Date", datetime.now())
@@ -589,11 +589,11 @@ with tab_patient:
         
         col3, col4 = st.columns(2)
         with col3:
-            op_date = st.date_input("Operation Date", datetime.now())
-            surgeon = st.text_input("Surgeon Name", value="Dr. Siravich")
+            op_date = st.date_input("Operation Date :red[*]", datetime.now())
+            surgeon = st.text_input("Surgeon Name :red[*]", value="Dr. Siravich")
         with col4:
             assistant = st.text_input("Assistant Name")
-            op_type = st.text_input("Operation Type")
+            op_type = st.text_input("Operation Type :red[*]")
         
         follow_up = st.selectbox("Follow-up Period", ["Pre-op", "2 week", "3 mo", "6 mo", "12 mo", "24 mo"])
 
@@ -730,11 +730,18 @@ with tab_patient:
         submitted = st.button("Save Visit", use_container_width=True)
             
         if submitted:
-            if not hn:
-                st.error("Please enter an HN.")
+            # Validation for mandatory fields
+            missing_fields = []
+            if not hn: missing_fields.append("Patient ID (HN)")
+            if not op_date: missing_fields.append("Operation Date")
+            if not surgeon: missing_fields.append("Surgeon Name")
+            if not op_type: missing_fields.append("Operation Type")
+
+            if missing_fields:
+                st.error(f"Please complete the following mandatory fields: {', '.join(missing_fields)}")
             else:
                 # Check for duplicates
-                if db.check_duplicate_visit(hn, follow_up):
+                if db.check_duplicate_visit(hn, follow_up, str(op_date)):
                     st.warning("This patient's visit may have already been recorded. Please recheck with the database.")
                 else:
                     # Calculate Scores
