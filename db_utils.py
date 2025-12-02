@@ -184,5 +184,14 @@ def get_patient_history(patient_id):
         return df.iloc[0].to_dict()
     return None
 
+def check_duplicate_visit(patient_id, follow_up_period):
+    """
+    Checks if a visit already exists for the given patient_id and follow_up_period.
+    Returns True if a duplicate exists, False otherwise.
+    """
+    query = "SELECT id FROM patient_pro_records WHERE patient_id = ? AND follow_up_period = ?"
+    df = run_query(query, (patient_id, follow_up_period), fetch=True)
+    return not df.empty
+
 # Initialize on import
 init_db()

@@ -732,40 +732,44 @@ with tab_patient:
             if not hn:
                 st.error("Please enter an HN.")
             else:
-                # Calculate Scores
-                odi_scores = [odi_q1, odi_q2, odi_q3, odi_q4, odi_q5, odi_q6, odi_q7, odi_q8, odi_q9, odi_q10]
-                odi_percent = calculate_odi(odi_scores)
-                # eq_dims = [eq1, eq2, eq3, eq4, eq5]
-                eq_score = calc.calculate_eq5d_score(eq1, eq2, eq3, eq4, eq5)
-                
-                # Prepare Data Dict
-                visit_data = {
-                    "patient_id": hn,
-                    "visit_date": str(visit_date),
-                    # "visit_time": str(visit_time), # Removed
-                    "gender": gender,
-                    "age": age,
-                    "operation_date": str(op_date),
-                    "surgeon": surgeon,
-                    "assistant": assistant,
-                    "operation_type": op_type,
-                    "procedure_type": proc_type,
-                    "follow_up_period": follow_up,
-                    "vas_score": pain_score,
-                    "odi_q1": odi_q1, "odi_q2": odi_q2, "odi_q3": odi_q3, "odi_q4": odi_q4, "odi_q5": odi_q5,
-                    "odi_q6": odi_q6, "odi_q7": odi_q7, "odi_q8": odi_q8, "odi_q9": odi_q9, "odi_q10": odi_q10,
-                    "odi_score": odi_percent,
-                    "eq5d_1": eq1, "eq5d_2": eq2, "eq5d_3": eq3, "eq5d_4": eq4, "eq5d_5": eq5,
-                    "eq5d_score": eq_score,
-                    "health_status": health_status,
-                    "satisfaction_score": satisfaction,
-                    "note": note
-                }
-                
-                db.add_patient(visit_data)
-                st.success(f"Visit saved for Patient ID {hn}!")
-                st.session_state.patient_view = 'list'
-                st.rerun()
+                # Check for duplicates
+                if db.check_duplicate_visit(hn, follow_up):
+                    st.warning("This patient's visit may have already been recorded. Please recheck with the database.")
+                else:
+                    # Calculate Scores
+                    odi_scores = [odi_q1, odi_q2, odi_q3, odi_q4, odi_q5, odi_q6, odi_q7, odi_q8, odi_q9, odi_q10]
+                    odi_percent = calculate_odi(odi_scores)
+                    # eq_dims = [eq1, eq2, eq3, eq4, eq5]
+                    eq_score = calc.calculate_eq5d_score(eq1, eq2, eq3, eq4, eq5)
+                    
+                    # Prepare Data Dict
+                    visit_data = {
+                        "patient_id": hn,
+                        "visit_date": str(visit_date),
+                        # "visit_time": str(visit_time), # Removed
+                        "gender": gender,
+                        "age": age,
+                        "operation_date": str(op_date),
+                        "surgeon": surgeon,
+                        "assistant": assistant,
+                        "operation_type": op_type,
+                        "procedure_type": proc_type,
+                        "follow_up_period": follow_up,
+                        "vas_score": pain_score,
+                        "odi_q1": odi_q1, "odi_q2": odi_q2, "odi_q3": odi_q3, "odi_q4": odi_q4, "odi_q5": odi_q5,
+                        "odi_q6": odi_q6, "odi_q7": odi_q7, "odi_q8": odi_q8, "odi_q9": odi_q9, "odi_q10": odi_q10,
+                        "odi_score": odi_percent,
+                        "eq5d_1": eq1, "eq5d_2": eq2, "eq5d_3": eq3, "eq5d_4": eq4, "eq5d_5": eq5,
+                        "eq5d_score": eq_score,
+                        "health_status": health_status,
+                        "satisfaction_score": satisfaction,
+                        "note": note
+                    }
+                    
+                    db.add_patient(visit_data)
+                    st.success(f"Visit saved for Patient ID {hn}!")
+                    st.session_state.patient_view = 'list'
+                    st.rerun()
 
     # View 3: Advanced Search
     elif st.session_state.patient_view == 'search':
