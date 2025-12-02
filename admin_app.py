@@ -2,9 +2,10 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import db_utils as db
+import importlib
+importlib.reload(db)
 from datetime import datetime
 import questionnaires as q
-import importlib
 import calculations as calc
 
 # --- Page Configuration ---
