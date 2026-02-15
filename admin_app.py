@@ -595,7 +595,13 @@ with tab_patient:
             assistant = st.text_input("Assistant Name")
             op_type = st.text_input("Operation Type :red[*]")
         
+
         follow_up = st.selectbox("Follow-up Period", ["Pre-op", "2 week", "3 mo", "6 mo", "12 mo", "24 mo"])
+
+        # Real-time Duplicate Check
+        if hn and visit_date and follow_up:
+             if db.check_duplicate_visit(hn, follow_up, str(visit_date)):
+                st.error("This patient's visit may have already been recorded. Please recheck with the database.")
 
         # 3. Clinical Scores
         st.markdown("#### Clinical Scores")
@@ -741,7 +747,7 @@ with tab_patient:
                 st.error(f"Please complete the following mandatory fields: {', '.join(missing_fields)}")
             else:
                 # Check for duplicates
-                if db.check_duplicate_visit(hn, follow_up, str(op_date)):
+                if db.check_duplicate_visit(hn, follow_up, str(visit_date)):
                     st.warning("This patient's visit may have already been recorded. Please recheck with the database.")
                 else:
                     # Calculate Scores
